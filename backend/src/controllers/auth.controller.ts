@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service.js';
+import { AuditService } from '../services/audit.service.js';
 import { registerSchema, loginSchema, refreshTokenSchema } from '../validators/auth.validator.js';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -8,6 +9,16 @@ export class AuthController {
     try {
       const validated = registerSchema.parse(req.body);
       const result = await AuthService.register(validated);
+
+      await AuditService.record({
+        actorId: result.user.id,
+        role: result.user.role,
+        action: 'REGISTER',
+        targetId: result.user.id,
+        requestId: req.requestId || 'unknown',
+        ip: req.ip,
+      });
+
       res.status(201).json({
         message: 'Account successfully registered',
         user: result.user,
@@ -22,6 +33,16 @@ export class AuthController {
     try {
       const validated = loginSchema.parse(req.body);
       const result = await AuthService.login(validated);
+
+      await AuditService.record({
+        actorId: result.user.id,
+        role: result.user.role,
+        action: 'LOGIN',
+        targetId: result.user.id,
+        requestId: req.requestId || 'unknown',
+        ip: req.ip,
+      });
+
       res.status(200).json({
         message: 'Login successful',
         user: result.user,

@@ -1,38 +1,41 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-6
+7
 
 ## Current Checkpoint
-Checkpoint 6 — Encryption and integrity
+Checkpoint 7 — Audit
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `backend/src/utils/crypto.ts`
-- `backend/src/utils/hash.ts`
-- `backend/src/services/integrity.ts`
-- `backend/tests/crypto.test.ts`
-- `backend/vitest.config.ts`
+- `backend/src/services/audit.service.ts`
+- `backend/src/controllers/audit.controller.ts`
+- `backend/src/routes/audit.ts`
+- `backend/src/controllers/auth.controller.ts`
+- `backend/src/app.ts`
+- `backend/scripts/verify-audit.ts`
+- `backend/tests/audit.test.ts`
+- `backend/package.json`
 - `context.md`
 
 ## Tests
-- `backend/tests/crypto.test.ts`: 7 tests covering:
-  - Round trip AES-256-GCM encryption and decryption returning original bytes.
-  - Random 12-byte IV per encryption ensuring two encryptions of the same bytes produce different ciphertexts.
-  - Tampered ciphertext detection throws error.
-  - Tampered authentication tag detection throws error.
-  - Wrong AAD binding throws error (protecting against context relocation).
-  - Deterministic SHA-256 hashing.
-  - Integrity evaluation matching exact specification statuses: `VERIFIED`, `MISMATCH`, `NOT_ANCHORED`, and `UNAVAILABLE`.
-- Total test count: 8 test files, 57 tests passing (100% pass rate).
+- `backend/tests/audit.test.ts`: 7 tests covering:
+  - Structured audit recording of `actorId`, `action`, `requestId`, and timestamp.
+  - Sequential cryptographic hash chaining (`prevHash` matches predecessor `hash`).
+  - Chain integrity verification succeeds on untouched log (`valid: true`).
+  - Scoped caller audit retrieval on `GET /api/v1/audit/me` (Patient A never sees Patient B entries).
+  - Admin-only access guard on `GET /api/v1/audit/verify` (403 for non-admins).
+  - Tamper detection: manual modification of an audit document's `action` in MongoDB causes `verifyChain()` to detect the corruption and report the exact broken index and log ID.
+  - Verification that metadata sanitization strictly removes passwords, tokens, secrets, and medical report contents.
+- Total tests: 9 test files, 64 tests passing (100% pass rate).
 
 ## Manual Verification
 - Typecheck: `npm run typecheck` passed cleanly across backend.
-- Tests: `npm test` passed all 57 tests.
-- Build: `npm run build` compiled cleanly.
-- Verified `ENCRYPTION_KEY` only appears in `backend/src/config/env.ts` and `backend/src/utils/crypto.ts`. Key is never logged.
+- Tests: `npm test` passed all 64 tests in 9.70s.
+- Build: `npm run build` compiled cleanly to `dist/`.
+- CLI script `backend/scripts/verify-audit.ts` added and runnable via `npm run verify:audit`.
 
 ## Problems Found
 - None.
@@ -61,4 +64,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 7 — Audit (Tamper-evident, hash-chained audit trail and scoped retrieval)
+Checkpoint 8 — Sui blockchain (Anchor integrity metadata on Sui testnet / truthful status)
