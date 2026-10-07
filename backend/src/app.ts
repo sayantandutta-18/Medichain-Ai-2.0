@@ -7,6 +7,7 @@ import { requestIdMiddleware } from './middleware/requestId.js';
 import { notFoundHandler, centralErrorHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './routes/health.js';
 import { authRouter } from './routes/auth.js';
+import { accessRouter } from './routes/access.js';
 
 export function createApp(): Express {
   const app = express();
@@ -37,6 +38,7 @@ export function createApp(): Express {
   // Routes
   app.use('/api/v1', healthRouter);
   app.use('/api/v1', authRouter);
+  app.use('/api/v1', accessRouter);
 
   // 404 handler for unknown routes
   app.use(notFoundHandler);

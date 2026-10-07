@@ -1,50 +1,42 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-3
+4
 
 ## Current Checkpoint
-Checkpoint 3 — Authentication
+Checkpoint 4 — Authorization and consent
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `backend/src/models/User.ts`
-- `backend/src/validators/auth.validator.ts`
-- `backend/src/services/auth.service.ts`
-- `backend/src/middleware/auth.middleware.ts`
-- `backend/src/controllers/auth.controller.ts`
-- `backend/src/routes/auth.ts`
+- `backend/src/policy/policy.ts`
+- `backend/src/services/audit.service.ts`
+- `backend/src/utils/hash.ts`
+- `backend/src/validators/access.validator.ts`
+- `backend/src/controllers/access.controller.ts`
+- `backend/src/routes/access.ts`
 - `backend/src/app.ts`
-- `backend/src/types/express.d.ts`
-- `backend/tests/auth.test.ts`
-- `backend/vitest.config.ts`
-- `docs/adr/0002-auth-token-storage.md`
+- `backend/tests/policy.matrix.test.ts`
 - `context.md`
 
 ## Tests
-- `backend/tests/auth.test.ts`: 14 integration tests covering:
-  - Reject password < 12 characters (400).
-  - Reject common passwords (400).
-  - Reject registration with role ADMIN via API (400).
-  - Successful user registration with bcrypt hash (cost 12) and JWT pair (201).
-  - Duplicate email rejection (409).
-  - Wrong password and non-existent email rejection with generic error message (401).
-  - Successful login returning JWT, hashed refresh token, and lastLoginAt timestamp (200).
-  - Missing JWT rejected on protected route (401).
-  - Tampered JWT rejected on protected route (401).
-  - Expired JWT rejected on protected route (401).
-  - Profile retrieval on `GET /api/v1/auth/me` with valid JWT (200).
-  - Refresh token rotation (old token invalidated, new pair generated) (200).
-  - Logout revoking refresh token (401 on subsequent reuse attempt).
-- Total tests: 5 test files, 26 tests passing (100% pass rate).
+- `backend/tests/policy.matrix.test.ts`: 14 tests covering:
+  - Policy matrix across actor types, actions, and consent states.
+  - Verification that Patient A has full control over their own records only.
+  - Verification that Patient A cannot read, download, update, or delete Patient B's records (IDOR protection).
+  - Verification that Doctor can NEVER update or delete patient records (always denied).
+  - Verification that Doctor access is denied when consent is absent, PENDING, REJECTED, EXPIRED, or REVOKED.
+  - Verification that Doctor with APPROVED consent is granted read/download scoped access.
+  - Verification that doctor self-requests are rejected.
+  - Integration of request creation, patient listing, approval, cryptographic receipt generation, JSON receipt download, and consent revocation.
+  - Audit log entries created for `ACCESS_REQUESTED`, `ACCESS_APPROVED`, `ACCESS_REJECTED`, and `ACCESS_REVOKED`.
+- Total test count: 6 test files, 40 tests passing (100% pass rate).
 
 ## Manual Verification
-- Typecheck: `npm run typecheck` passed cleanly.
-- Tests: `npm test` passed all 26 tests in 7.74s.
-- Build: `npm run build` compiled all TypeScript to `dist/`.
-- ADR 0002 written in `docs/adr/0002-auth-token-storage.md` documenting decisions between httpOnly cookies vs headers.
+- Typecheck: `npm run typecheck` passed cleanly across backend.
+- Tests: `npm test` passed all 40 tests in 8.21s.
+- Build: `npm run build` compiled cleanly to `dist/`.
 
 ## Problems Found
 - None.
@@ -73,4 +65,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 4 — Authorization and consent (Central policy module `can()`, consent state machine, access requests, receipts)
+Checkpoint 5 — Medical records (Upload pipeline, list, details, download, update, delete with validation)
