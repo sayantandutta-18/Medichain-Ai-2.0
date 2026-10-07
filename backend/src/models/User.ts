@@ -9,6 +9,7 @@ export interface IUser {
   firstName?: string;
   lastName?: string;
   lastLoginAt?: Date;
+  refreshTokenHash?: string | null;
   schemaVersion: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -45,6 +46,10 @@ const userSchema = new Schema<UserDocument>(
     },
     lastLoginAt: {
       type: Date,
+    },
+    refreshTokenHash: {
+      type: String,
+      default: null,
     },
     schemaVersion: {
       type: Number,

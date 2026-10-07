@@ -1,57 +1,56 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-2
+3
 
 ## Current Checkpoint
-Checkpoint 2 — Database
+Checkpoint 3 — Authentication
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `backend/src/config/db.ts`
 - `backend/src/models/User.ts`
-- `backend/src/models/MedicalRecord.ts`
-- `backend/src/models/AccessRequest.ts`
-- `backend/src/models/AuditLog.ts`
-- `backend/src/models/ShareLink.ts`
-- `backend/src/models/Notification.ts`
-- `backend/src/models/Appointment.ts`
-- `backend/src/models/Prescription.ts`
-- `backend/src/models/EmergencyProfile.ts`
-- `backend/src/models/CaregiverAccess.ts`
-- `backend/src/models/Organization.ts`
-- `backend/src/models/Membership.ts`
-- `backend/src/models/SecurityEvent.ts`
-- `backend/src/models/index.ts`
-- `backend/scripts/seed.ts`
-- `backend/tests/database.test.ts`
+- `backend/src/validators/auth.validator.ts`
+- `backend/src/services/auth.service.ts`
+- `backend/src/middleware/auth.middleware.ts`
+- `backend/src/controllers/auth.controller.ts`
+- `backend/src/routes/auth.ts`
+- `backend/src/app.ts`
+- `backend/src/types/express.d.ts`
+- `backend/tests/auth.test.ts`
 - `backend/vitest.config.ts`
-- `docs/database.md`
-- `backend/package.json`
-- `package.json`
+- `docs/adr/0002-auth-token-storage.md`
 - `context.md`
 
 ## Tests
-- `backend/tests/database.test.ts`: 4 tests covering:
-  - Model compilation and instance creation across all 13 schemas.
-  - Verification of required indexes (`MedicalRecord` patientId+createdAt, `AccessRequest` patientId+doctorId+status, `AuditLog` actorId+createdAt, `ShareLink` tokenHash & TTL, `Appointment` doctorId+slotStart unique, `Notification` TTL).
-  - Integration with in-memory MongoDB initializing indexes without errors.
-  - Sanitization of database error messages to guarantee zero credential/connection string leaks.
-- All backend tests: 4 test files, 12 tests passing.
+- `backend/tests/auth.test.ts`: 14 integration tests covering:
+  - Reject password < 12 characters (400).
+  - Reject common passwords (400).
+  - Reject registration with role ADMIN via API (400).
+  - Successful user registration with bcrypt hash (cost 12) and JWT pair (201).
+  - Duplicate email rejection (409).
+  - Wrong password and non-existent email rejection with generic error message (401).
+  - Successful login returning JWT, hashed refresh token, and lastLoginAt timestamp (200).
+  - Missing JWT rejected on protected route (401).
+  - Tampered JWT rejected on protected route (401).
+  - Expired JWT rejected on protected route (401).
+  - Profile retrieval on `GET /api/v1/auth/me` with valid JWT (200).
+  - Refresh token rotation (old token invalidated, new pair generated) (200).
+  - Logout revoking refresh token (401 on subsequent reuse attempt).
+- Total tests: 5 test files, 26 tests passing (100% pass rate).
 
 ## Manual Verification
-- Typecheck: `npm run typecheck` passed (tsc clean).
-- Build: `npm run build` compiled all models and seed script into `dist/`.
-- Test suite: `npm test` verified all suites with 100% pass rate.
-- Error sanitization: verified `sanitizeDbError` replaces `mongodb+srv://user:pass@host` with `mongodb://[REDACTED]`.
+- Typecheck: `npm run typecheck` passed cleanly.
+- Tests: `npm test` passed all 26 tests in 7.74s.
+- Build: `npm run build` compiled all TypeScript to `dist/`.
+- ADR 0002 written in `docs/adr/0002-auth-token-storage.md` documenting decisions between httpOnly cookies vs headers.
 
 ## Problems Found
-- Initial `beforeAll` hook in `database.test.ts` timed out while downloading the MongoDB binary on first run.
+- None.
 
 ## Problems Fixed
-- Configured `hookTimeout: 300000` in `backend/vitest.config.ts` and `database.test.ts` allowing complete binary download and caching. Subsequent runs execute in ~2 seconds.
+- None.
 
 ## Remaining Issues
 - None.
@@ -74,4 +73,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 3 — Authentication (Register, login, me, logout with bcrypt and JWT)
+Checkpoint 4 — Authorization and consent (Central policy module `can()`, consent state machine, access requests, receipts)

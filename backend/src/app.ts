@@ -6,6 +6,7 @@ import { env } from './config/env.js';
 import { requestIdMiddleware } from './middleware/requestId.js';
 import { notFoundHandler, centralErrorHandler } from './middleware/errorHandler.js';
 import { healthRouter } from './routes/health.js';
+import { authRouter } from './routes/auth.js';
 
 export function createApp(): Express {
   const app = express();
@@ -35,6 +36,7 @@ export function createApp(): Express {
 
   // Routes
   app.use('/api/v1', healthRouter);
+  app.use('/api/v1', authRouter);
 
   // 404 handler for unknown routes
   app.use(notFoundHandler);
