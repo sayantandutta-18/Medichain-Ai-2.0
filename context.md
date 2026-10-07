@@ -1,46 +1,55 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-0
+1
 
 ## Current Checkpoint
-Checkpoint 0 — Repository
+Checkpoint 1 — API
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `.gitignore`
-- `.env.example`
+- `backend/package.json`
+- `backend/tsconfig.json`
+- `backend/vitest.config.ts`
+- `backend/src/config/env.ts`
+- `backend/src/middleware/requestId.ts`
+- `backend/src/middleware/errorHandler.ts`
+- `backend/src/routes/health.ts`
+- `backend/src/app.ts`
+- `backend/src/server.ts`
+- `backend/src/types/express.d.ts`
+- `backend/src/types/morgan.d.ts`
+- `backend/src/types/bcryptjs.d.ts`
+- `backend/tests/health.test.ts`
+- `backend/tests/errors.test.ts`
+- `backend/tests/env.test.ts`
 - `package.json`
-- `docker-compose.yml`
-- `README.md`
-- `AGENTS.md`
-- `GEMINI.md`
-- `docs/architecture.md`
-- `docs/adr/0001-scope.md`
 - `context.md`
-- Scaffold directories and `.gitkeep` markers for:
-  - `backend/src/{config,controllers,middleware,models,routes,services,validators,utils,blockchain}`
-  - `backend/tests`
-  - `frontend/src/{api,components,context,pages,routes,types,utils}`
-  - `sui`
-  - `docs/adr`
-  - `scripts`
 
 ## Tests
-- No application code tests in Checkpoint 0 (scaffold only). Application code begins in Checkpoint 1.
+- `backend/tests/health.test.ts`: Validates `GET /api/v1/health` returns status 200 `{ status: "ok" }` and attaches `X-Request-Id`.
+- `backend/tests/errors.test.ts`: Validates 404 and central 500 error responses contain `requestId` and strictly omit `stack` traces; verifies header preservation and error sanitization.
+- `backend/tests/env.test.ts`: Validates Zod schema fail-fast behavior on missing `PORT`, invalid non-numeric/out-of-range `PORT`, and invalid `NODE_ENV`.
+- Results: 3 test files passed, 8 tests passed (0 failures).
 
 ## Manual Verification
-- `git status` -> clean staging of all expected scaffold files
-- `git check-ignore -v .env node_modules/ dist/ coverage/` -> matches `.gitignore`
-- Scanned for uncommitted secrets or credentials (no actual secrets present)
+- `npm run typecheck` passed cleanly across backend.
+- `npm test` ran Vitest with all 8 tests passing.
+- `npm run build` compiled TypeScript to `dist/` cleanly.
+- Fail-fast check: Running server without `PORT` produced `Error: Environment configuration error: PORT: PORT is required` and exited immediately.
+- Running server with `PORT=4000 CORS_ORIGIN=http://localhost:5173`:
+  - `curl -i http://localhost:4000/api/v1/health` -> returned 200 OK, Helmet headers, CORS headers, `X-Request-Id`, and `{"status":"ok"}`.
+  - `curl -i http://localhost:4000/api/v1/does-not-exist` -> returned 404 Not Found, `requestId`, and strictly no `stack` trace.
 
 ## Problems Found
-- None.
+1. Module type declarations: `morgan` and `bcryptjs` threw TS7016 during `tsc --noEmit`.
+2. Cross-platform script invocation: Windows `cmd.exe` failed invoking `npm` within nested subshells.
 
 ## Problems Fixed
-- None.
+1. Added local ambient module declarations in `backend/src/types/morgan.d.ts` and `backend/src/types/bcryptjs.d.ts` without violating Rule 16 (no unlisted packages).
+2. Configured root `package.json` scripts to invoke the local Node binary runners directly.
 
 ## Remaining Issues
 - None.
@@ -63,4 +72,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 1 — API (Express API with env-driven config and central errors)
+Checkpoint 2 — Database (MongoDB connection, core models, indexes, seed script)

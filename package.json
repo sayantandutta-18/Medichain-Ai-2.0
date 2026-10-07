@@ -8,9 +8,9 @@
     "frontend"
   ],
   "scripts": {
-    "typecheck": "npm run --workspaces --if-present typecheck",
-    "test": "npm run --workspaces --if-present test",
-    "build": "npm run --workspaces --if-present build"
+    "typecheck": "node ./node_modules/typescript/bin/tsc --project backend/tsconfig.json --noEmit",
+    "test": "node ./node_modules/vitest/vitest.mjs run --config backend/vitest.config.ts",
+    "build": "node ./node_modules/typescript/bin/tsc --project backend/tsconfig.json"
   },
   "devDependencies": {}
 }
