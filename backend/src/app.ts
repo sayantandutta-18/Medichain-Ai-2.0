@@ -10,6 +10,7 @@ import { authRouter } from './routes/auth.js';
 import { accessRouter } from './routes/access.js';
 import { recordRouter } from './routes/record.js';
 import { auditRouter } from './routes/audit.js';
+import { aiRouter } from './routes/ai.js';
 
 export function createApp(): Express {
   const app = express();
@@ -43,6 +44,7 @@ export function createApp(): Express {
   app.use('/api/v1', accessRouter);
   app.use('/api/v1', recordRouter);
   app.use('/api/v1', auditRouter);
+  app.use('/api/v1', aiRouter);
 
   // 404 handler for unknown routes
   app.use(notFoundHandler);

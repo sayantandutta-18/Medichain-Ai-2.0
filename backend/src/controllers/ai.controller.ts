@@ -1,0 +1,32 @@
+import { Request, Response, NextFunction } from 'express';
+import { AiService } from '../services/ai/ai.service.js';
+import { AppError } from '../middleware/errorHandler.js';
+
+export class AiController {
+  public static async explainRecord(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new AppError('Unauthorized', 401);
+
+      const recordId = Array.isArray(req.params.id) ? req.params.id[0] : (req.params.id as string);
+      const result = await AiService.explainRecord(
+        recordId,
+        { userId: req.user.userId, role: req.user.role },
+        req.requestId || 'unknown'
+      );
+
+      res.status(200).json(result);
+    } catch (err: any) {
+      if (err.code === 'AI_UNAVAILABLE' || err.status === 503) {
+        res.status(503).json({
+          status: 'AI_UNAVAILABLE',
+          error: 'AI_UNAVAILABLE',
+          message: 'AI assistant is currently unavailable: OPENAI_API_KEY is not configured or reachable',
+          requestId: req.requestId || 'unknown',
+          statusCode: 503,
+        });
+        return;
+      }
+      next(err);
+    }
+  }
+}

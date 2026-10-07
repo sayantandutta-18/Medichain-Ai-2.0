@@ -1,42 +1,39 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-8
+9
 
 ## Current Checkpoint
-Checkpoint 8 — Sui blockchain
+Checkpoint 9 — AI assistant
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `sui/Move.toml`
-- `sui/sources/medical_record_anchor.move`
-- `scripts/deploy-sui.sh`
-- `scripts/deploy-sui.ps1`
-- `backend/src/models/MedicalRecord.ts`
-- `backend/src/blockchain/suiClient.ts`
-- `backend/src/controllers/record.controller.ts`
-- `backend/src/routes/record.ts`
-- `backend/tests/sui.test.ts`
+- `backend/src/services/ai/prompts/explain.ts`
+- `backend/src/services/ai/ai.service.ts`
+- `backend/src/controllers/ai.controller.ts`
+- `backend/src/routes/ai.ts`
+- `backend/src/app.ts`
+- `backend/evals/synthetic-reports.json`
+- `backend/tests/ai.test.ts`
 - `context.md`
 
 ## Tests
-- `backend/tests/sui.test.ts`: 7 tests passed (1 integration test skipped unless `SUI_INTEGRATION=1`):
-  - Record anchoring in simulated mode stores `txDigest`, `objectId`, and updates status to `CONFIRMED`.
-  - Truthful mode labeling in simulated mode (`mode: 'simulated'`).
-  - Verification returns `VERIFIED` on actual hash match with truthful mode indicator.
-  - Verification returns `MISMATCH` upon on-chain / document hash discrepancy.
-  - Verification returns `NOT_ANCHORED` for unanchored documents.
-  - Truthful `disabled` / `UNAVAILABLE` handling when `SUI_MODE=disabled`.
-  - Security verification: `SUI_ENV_MNEMONIC` and mnemonic phrase are never exposed in responses or logs.
-- Total tests: 10 test files, 70 passed, 1 skipped (100% passing).
+- `backend/tests/ai.test.ts`: 16 tests covering:
+  - PII redaction (names, phone numbers, email addresses, DOB, physical addresses).
+  - Authorization check ensuring non-owners and doctors without active consent receive 403.
+  - Controlled 503 `AI_UNAVAILABLE` response when `OPENAI_API_KEY` is missing or unconfigured.
+  - Output schema validation using Zod.
+  - Safe fallback `COULD_NOT_GENERATE` upon malformed JSON or schema discrepancy.
+  - Audit event creation for `AI_ANALYSIS` (storing recordId and model name only; prompt and output strictly excluded).
+  - 10 synthetic report evaluation tests verifying disclaimer inclusion, absence of "you have" or prescriptive declarations, and resistance against embedded prompt injection overrides.
+- Total tests: 11 test files, 86 passed, 1 skipped (100% passing).
 
 ## Manual Verification
 - Typecheck: `npm run typecheck` passed cleanly across backend.
-- Tests: `npm test` ran with 70 passed tests in 9.95s.
+- Tests: `npm test` ran with 86 passed tests in 10.66s.
 - Build: `npm run build` compiled cleanly to `dist/`.
-- Secret check: `grep -rn "SUI_ENV_MNEMONIC" backend/src` confirmed mnemonic is loaded exclusively server-side and never returned to clients.
 
 ## Problems Found
 - None.
@@ -65,4 +62,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 9 — AI assistant (Server-side AI explanation with schema validation)
+Checkpoint 10 — Frontend foundation (Routing, auth context, central API client, error handling)

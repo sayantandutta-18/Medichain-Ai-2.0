@@ -1,0 +1,191 @@
+import { z } from 'zod';
+import { env } from '../../config/env.js';
+import { MedicalRecord } from '../../models/MedicalRecord.js';
+import { can, PolicyActor } from '../../policy/policy.js';
+import { decrypt } from '../../utils/crypto.js';
+import { AuditService } from '../audit.service.js';
+import { AppError } from '../../middleware/errorHandler.js';
+import {
+  EXPLAIN_SYSTEM_PROMPT,
+  buildExplanationUserPrompt,
+  redactDirectIdentifiers,
+} from './prompts/explain.js';
+
+export const aiExplanationSchema = z.object({
+  summary: z.string().min(1, 'Summary is required'),
+  keyFindings: z.array(z.string()).default([]),
+  patientFriendlyExplanation: z.string().min(1, 'Explanation is required'),
+  terminology: z
+    .array(
+      z.object({
+        term: z.string().min(1),
+        meaning: z.string().min(1),
+      })
+    )
+    .default([]),
+  questionsForClinician: z.array(z.string()).default([]),
+  disclaimer: z.string().min(1, 'Disclaimer is required'),
+});
+
+export type AiExplanation = z.infer<typeof aiExplanationSchema>;
+
+export interface AiExplanationResult {
+  status: 'SUCCESS' | 'COULD_NOT_GENERATE' | 'AI_UNAVAILABLE';
+  explanation?: AiExplanation;
+  message?: string;
+  disclaimer: string;
+}
+
+export type LlmProviderFn = (systemPrompt: string, userPrompt: string) => Promise<string>;
+
+export class AiService {
+  private static defaultDisclaimer =
+    'AI-generated educational explanation only. Not a medical diagnosis. Please review and verify with your qualified clinician.';
+
+  /**
+   * Calls OpenAI Chat Completions API with strict timeouts.
+   */
+  private static async callOpenAi(systemPrompt: string, userPrompt: string): Promise<string> {
+    const apiKey = env.OPENAI_API_KEY;
+    if (!apiKey || apiKey === 'mock-or-placeholder-key' || apiKey === 'dummy_openai_api_key') {
+      const err = new AppError('AI provider unavailable: OPENAI_API_KEY is not configured', 503);
+      (err as any).status = 503;
+      (err as any).code = 'AI_UNAVAILABLE';
+      throw err;
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: env.OPENAI_MODEL || 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          temperature: 0.2,
+          response_format: { type: 'json_object' },
+        }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        throw new AppError(`OpenAI API error: ${res.statusText}`, 503);
+      }
+
+      const data = (await res.json()) as any;
+      const content = data.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new Error('Empty response from AI provider');
+      }
+      return content;
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        throw new AppError('AI request timed out after 15 seconds', 504);
+      }
+      if (err instanceof AppError) throw err;
+      throw new AppError('AI provider unavailable', 503);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
+   * Explains record contents with policy authorization, PII redaction, schema validation, and audit trail.
+   */
+  public static async explainRecord(
+    recordId: string,
+    actor: PolicyActor,
+    requestId: string = 'unknown',
+    customProvider?: LlmProviderFn
+  ): Promise<AiExplanationResult> {
+    // 1. Fetch record
+    const record = await MedicalRecord.findOne({ _id: recordId, deletedAt: null });
+    if (!record) {
+      throw new AppError('Medical record not found', 404);
+    }
+
+    // 2. Run policy check first (patient owner or approved doctor with VIEW/FULL consent)
+    const allowed = await can(actor, 'record:read', {
+      recordPatientId: record.patientId.toString(),
+    });
+    if (!allowed) {
+      throw new AppError('Unauthorized: Access denied to record for AI explanation', 403);
+    }
+
+    // 3. Decrypt record in memory (never logged, never saved unencrypted)
+    const aad = `${record._id.toString()}|${record.patientId.toString()}`;
+    let documentText = '';
+    try {
+      const decryptedBytes = decrypt(record.encryptedPayload, aad);
+      documentText = decryptedBytes.toString('utf-8');
+    } catch {
+      throw new AppError('Decryption failed while preparing record for analysis', 500);
+    }
+
+    // 4. Redact direct identifiers (name, phone, email, address patterns)
+    const redactedText = redactDirectIdentifiers(documentText);
+
+    // 5. Build prompt
+    const userPrompt = buildExplanationUserPrompt(redactedText);
+
+    // 6. Call Provider (OpenAI or injected mock provider for tests)
+    let rawOutput = '';
+    try {
+      if (customProvider) {
+        rawOutput = await customProvider(EXPLAIN_SYSTEM_PROMPT, userPrompt);
+      } else {
+        rawOutput = await this.callOpenAi(EXPLAIN_SYSTEM_PROMPT, userPrompt);
+      }
+    } catch (err: any) {
+      // Missing key or provider failure returns controlled 503 AI_UNAVAILABLE (Master Rule 5)
+      throw err;
+    }
+
+    // 7. Validate response with Zod schema
+    let parsedJson: any;
+    try {
+      parsedJson = JSON.parse(rawOutput);
+    } catch {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not generate explanation: provider returned invalid JSON',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    const validationResult = aiExplanationSchema.safeParse(parsedJson);
+    if (!validationResult.success) {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not generate explanation: output failed required safety schema validation',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    // 8. Audit AI_ANALYSIS with recordId and model name only (NEVER full prompt or output text; Rule 9)
+    await AuditService.record({
+      actorId: actor.userId,
+      role: actor.role,
+      action: 'AI_ANALYSIS',
+      targetId: recordId,
+      requestId,
+      metadata: {
+        model: env.OPENAI_MODEL || 'gpt-4o-mini',
+      },
+    });
+
+    return {
+      status: 'SUCCESS',
+      explanation: validationResult.data,
+      disclaimer: validationResult.data.disclaimer,
+    };
+  }
+}
