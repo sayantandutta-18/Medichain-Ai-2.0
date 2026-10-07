@@ -1,0 +1,16 @@
+{
+  "name": "medichain-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Patient-controlled medical records portfolio MVP",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "typecheck": "npm run --workspaces --if-present typecheck",
+    "test": "npm run --workspaces --if-present test",
+    "build": "npm run --workspaces --if-present build"
+  },
+  "devDependencies": {}
+}

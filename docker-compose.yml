@@ -1,0 +1,12 @@
+# MediChain-AI Docker Compose Placeholder
+# Full multi-container configuration will be configured in Checkpoint 18.
+version: "3.8"
+
+services:
+  # Placeholder service definitions
+  # api:
+  #   build: ./backend
+  # web:
+  #   build: ./frontend
+  # mongo:
+  #   image: mongo:7
