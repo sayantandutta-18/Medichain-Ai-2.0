@@ -20,3 +20,5 @@ recordRouter.get('/records/:id', requireAuth, RecordController.getById);
 recordRouter.get('/records/:id/download', requireAuth, RecordController.download);
 recordRouter.patch('/records/:id', requireAuth, RecordController.updateMetadata);
 recordRouter.delete('/records/:id', requireAuth, RecordController.deleteRecord);
+recordRouter.post('/records/:id/anchor', requireAuth, RecordController.anchor);
+recordRouter.get('/records/:id/verify', requireAuth, RecordController.verify);

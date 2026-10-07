@@ -7,6 +7,15 @@ export interface IEncryptedPayload {
   keyVersion: number;
 }
 
+export interface IBlockchainAnchor {
+  txDigest?: string;
+  objectId?: string;
+  onChainHash?: string;
+  status: 'PENDING' | 'CONFIRMED' | 'FAILED';
+  mode: 'testnet' | 'simulated' | 'disabled';
+  anchoredAt?: Date;
+}
+
 export interface IMedicalRecord {
   patientId: Types.ObjectId;
   title: string;
@@ -18,6 +27,7 @@ export interface IMedicalRecord {
   originalFilename?: string;
   mimeType?: string;
   sizeBytes?: number;
+  blockchainAnchor?: IBlockchainAnchor;
   deletedAt?: Date | null;
   schemaVersion: number;
   createdAt?: Date;
@@ -25,6 +35,26 @@ export interface IMedicalRecord {
 }
 
 export interface MedicalRecordDocument extends IMedicalRecord, Document<Types.ObjectId> {}
+
+const blockchainAnchorSchema = new Schema<IBlockchainAnchor>(
+  {
+    txDigest: { type: String },
+    objectId: { type: String },
+    onChainHash: { type: String },
+    status: {
+      type: String,
+      enum: ['PENDING', 'CONFIRMED', 'FAILED'],
+      default: 'PENDING',
+    },
+    mode: {
+      type: String,
+      enum: ['testnet', 'simulated', 'disabled'],
+      default: 'simulated',
+    },
+    anchoredAt: { type: Date },
+  },
+  { _id: false }
+);
 
 const encryptedPayloadSchema = new Schema<IEncryptedPayload>(
   {
@@ -81,6 +111,9 @@ const medicalRecordSchema = new Schema<MedicalRecordDocument>(
     },
     sizeBytes: {
       type: Number,
+    },
+    blockchainAnchor: {
+      type: blockchainAnchorSchema,
     },
     deletedAt: {
       type: Date,

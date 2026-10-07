@@ -1,41 +1,42 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-7
+8
 
 ## Current Checkpoint
-Checkpoint 7 — Audit
+Checkpoint 8 — Sui blockchain
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `backend/src/services/audit.service.ts`
-- `backend/src/controllers/audit.controller.ts`
-- `backend/src/routes/audit.ts`
-- `backend/src/controllers/auth.controller.ts`
-- `backend/src/app.ts`
-- `backend/scripts/verify-audit.ts`
-- `backend/tests/audit.test.ts`
-- `backend/package.json`
+- `sui/Move.toml`
+- `sui/sources/medical_record_anchor.move`
+- `scripts/deploy-sui.sh`
+- `scripts/deploy-sui.ps1`
+- `backend/src/models/MedicalRecord.ts`
+- `backend/src/blockchain/suiClient.ts`
+- `backend/src/controllers/record.controller.ts`
+- `backend/src/routes/record.ts`
+- `backend/tests/sui.test.ts`
 - `context.md`
 
 ## Tests
-- `backend/tests/audit.test.ts`: 7 tests covering:
-  - Structured audit recording of `actorId`, `action`, `requestId`, and timestamp.
-  - Sequential cryptographic hash chaining (`prevHash` matches predecessor `hash`).
-  - Chain integrity verification succeeds on untouched log (`valid: true`).
-  - Scoped caller audit retrieval on `GET /api/v1/audit/me` (Patient A never sees Patient B entries).
-  - Admin-only access guard on `GET /api/v1/audit/verify` (403 for non-admins).
-  - Tamper detection: manual modification of an audit document's `action` in MongoDB causes `verifyChain()` to detect the corruption and report the exact broken index and log ID.
-  - Verification that metadata sanitization strictly removes passwords, tokens, secrets, and medical report contents.
-- Total tests: 9 test files, 64 tests passing (100% pass rate).
+- `backend/tests/sui.test.ts`: 7 tests passed (1 integration test skipped unless `SUI_INTEGRATION=1`):
+  - Record anchoring in simulated mode stores `txDigest`, `objectId`, and updates status to `CONFIRMED`.
+  - Truthful mode labeling in simulated mode (`mode: 'simulated'`).
+  - Verification returns `VERIFIED` on actual hash match with truthful mode indicator.
+  - Verification returns `MISMATCH` upon on-chain / document hash discrepancy.
+  - Verification returns `NOT_ANCHORED` for unanchored documents.
+  - Truthful `disabled` / `UNAVAILABLE` handling when `SUI_MODE=disabled`.
+  - Security verification: `SUI_ENV_MNEMONIC` and mnemonic phrase are never exposed in responses or logs.
+- Total tests: 10 test files, 70 passed, 1 skipped (100% passing).
 
 ## Manual Verification
 - Typecheck: `npm run typecheck` passed cleanly across backend.
-- Tests: `npm test` passed all 64 tests in 9.70s.
+- Tests: `npm test` ran with 70 passed tests in 9.95s.
 - Build: `npm run build` compiled cleanly to `dist/`.
-- CLI script `backend/scripts/verify-audit.ts` added and runnable via `npm run verify:audit`.
+- Secret check: `grep -rn "SUI_ENV_MNEMONIC" backend/src` confirmed mnemonic is loaded exclusively server-side and never returned to clients.
 
 ## Problems Found
 - None.
@@ -64,4 +65,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 8 — Sui blockchain (Anchor integrity metadata on Sui testnet / truthful status)
+Checkpoint 9 — AI assistant (Server-side AI explanation with schema validation)

@@ -7,6 +7,7 @@ import { sha256 } from '../utils/hash.js';
 import { validateMagicBytes, stripExifMetadata, ALLOWED_MIME_TYPES } from '../utils/fileValidation.js';
 import { AuditService } from '../services/audit.service.js';
 import { listRecordsQuerySchema, updateRecordMetadataSchema } from '../validators/record.validator.js';
+import { SuiClient } from '../blockchain/suiClient.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { env } from '../config/env.js';
 
@@ -390,6 +391,58 @@ export class RecordController {
       });
 
       res.status(200).json({ message: 'Record deleted successfully' });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async anchor(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new AppError('Unauthorized', 401);
+
+      const record = await MedicalRecord.findOne({ _id: req.params.id, deletedAt: null });
+      if (!record) {
+        throw new AppError('Medical record not found', 404);
+      }
+
+      const allowed = await can(
+        { userId: req.user.userId, role: req.user.role },
+        'record:update',
+        { recordPatientId: record.patientId.toString() }
+      );
+
+      if (!allowed) {
+        throw new AppError('Only the record owner can anchor records to the blockchain', 403);
+      }
+
+      const result = await SuiClient.anchorRecord(record._id.toString(), req.user.userId);
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async verify(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new AppError('Unauthorized', 401);
+
+      const record = await MedicalRecord.findOne({ _id: req.params.id, deletedAt: null });
+      if (!record) {
+        throw new AppError('Medical record not found', 404);
+      }
+
+      const allowed = await can(
+        { userId: req.user.userId, role: req.user.role },
+        'record:read',
+        { recordPatientId: record.patientId.toString() }
+      );
+
+      if (!allowed) {
+        throw new AppError('Unauthorized to verify this medical record', 403);
+      }
+
+      const result = await SuiClient.verifyRecord(record._id.toString(), req.user.userId);
+      res.status(200).json(result);
     } catch (err) {
       next(err);
     }
