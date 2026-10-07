@@ -1,41 +1,39 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-4
+5
 
 ## Current Checkpoint
-Checkpoint 4 — Authorization and consent
+Checkpoint 5 — Medical records
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `backend/src/policy/policy.ts`
-- `backend/src/services/audit.service.ts`
-- `backend/src/utils/hash.ts`
-- `backend/src/validators/access.validator.ts`
-- `backend/src/controllers/access.controller.ts`
-- `backend/src/routes/access.ts`
+- `backend/src/utils/fileValidation.ts`
+- `backend/src/validators/record.validator.ts`
+- `backend/src/controllers/record.controller.ts`
+- `backend/src/routes/record.ts`
 - `backend/src/app.ts`
-- `backend/tests/policy.matrix.test.ts`
+- `backend/tests/records.test.ts`
 - `context.md`
 
 ## Tests
-- `backend/tests/policy.matrix.test.ts`: 14 tests covering:
-  - Policy matrix across actor types, actions, and consent states.
-  - Verification that Patient A has full control over their own records only.
-  - Verification that Patient A cannot read, download, update, or delete Patient B's records (IDOR protection).
-  - Verification that Doctor can NEVER update or delete patient records (always denied).
-  - Verification that Doctor access is denied when consent is absent, PENDING, REJECTED, EXPIRED, or REVOKED.
-  - Verification that Doctor with APPROVED consent is granted read/download scoped access.
-  - Verification that doctor self-requests are rejected.
-  - Integration of request creation, patient listing, approval, cryptographic receipt generation, JSON receipt download, and consent revocation.
-  - Audit log entries created for `ACCESS_REQUESTED`, `ACCESS_APPROVED`, `ACCESS_REJECTED`, and `ACCESS_REVOKED`.
-- Total test count: 6 test files, 40 tests passing (100% pass rate).
+- `backend/tests/records.test.ts`: 10 integration tests covering:
+  - Rejection of invalid MIME types.
+  - Rejection of spoofed/renamed files using magic-byte checks.
+  - Multipart upload pipeline encrypting files with AES-256-GCM and bound AAD.
+  - Duplicate detection rejecting identical uploads by hash for the same patient (409).
+  - Doctor download without consent denied with 403 and audited (`RECORD_DOWNLOAD_DENIED`).
+  - Doctor download with active consent permitted with 200 and original decrypted bytes returned.
+  - Patient download of own record returning original decrypted bytes and audited (`RECORD_DOWNLOADED`).
+  - Blocking doctor from updating metadata or deleting records (403).
+  - Soft delete hiding record from active listings.
+- Total tests: 8 test files, 57 tests passing (100% pass rate).
 
 ## Manual Verification
 - Typecheck: `npm run typecheck` passed cleanly across backend.
-- Tests: `npm test` passed all 40 tests in 8.21s.
+- Tests: `npm test` passed all 57 tests in 9.04s.
 - Build: `npm run build` compiled cleanly to `dist/`.
 
 ## Problems Found
@@ -65,4 +63,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 5 — Medical records (Upload pipeline, list, details, download, update, delete with validation)
+Checkpoint 6 — Encryption and integrity
