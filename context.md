@@ -1,47 +1,37 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-11
+12
 
 ## Current Checkpoint
-Checkpoint 11 — Patient dashboard (Real APIs, upload with progress, record details, access requests, verification)
+Checkpoint 12 — Doctor dashboard (Consent-aware UI, search patient by consent, requested/approved/expired status, read-only authorized view)
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `backend/vitest.config.ts`
-- `frontend/src/types/records.ts`
-- `frontend/src/components/common/Skeleton.tsx`
-- `frontend/src/components/common/Badge.tsx`
-- `frontend/src/components/common/Modal.tsx`
-- `frontend/src/components/layout/PatientLayout.tsx`
-- `frontend/src/pages/patient/Dashboard.tsx`
-- `frontend/src/pages/patient/RecordsList.tsx`
-- `frontend/src/pages/patient/UploadRecord.tsx`
-- `frontend/src/pages/patient/ConsentRequests.tsx`
-- `frontend/src/pages/patient/AuditLogView.tsx`
-- `frontend/src/pages/patient/EmergencyCard.tsx`
-- `frontend/src/pages/patient/Appointments.tsx`
-- `frontend/src/pages/patient/Medications.tsx`
-- `frontend/src/pages/Dashboard.tsx`
+- `frontend/src/types/auth.ts`
+- `frontend/src/components/layout/DoctorLayout.tsx`
+- `frontend/src/pages/doctor/DoctorDashboard.tsx`
+- `frontend/src/pages/doctor/DoctorRequests.tsx`
+- `frontend/src/pages/doctor/RequestPatientAccess.tsx`
+- `frontend/src/pages/doctor/DoctorPatientRecords.tsx`
+- `frontend/src/pages/doctor/DoctorAuditLog.tsx`
 - `frontend/src/App.tsx`
-- `frontend/src/tests/patient.test.tsx`
+- `frontend/src/tests/doctor.test.tsx`
 - `context.md`
 
 ## Tests
-- `frontend/src/tests/patient.test.tsx`: 8 tests covering:
-  - Patient dashboard skeleton loading and metric computation from real API responses (`/records`, `/access-requests`).
-  - Educational empty state ("Upload your first report to see your timeline") when no records exist.
-  - Controlled error state display upon server failure without unhandled client crash.
-  - Records list rendering with SHA-256 verification and Sui blockchain status badges.
-  - Cryptographic verification modal opening and displaying stored vs computed hash byte match.
-  - File upload with mime validation, multipart submission, and progress tracking.
-  - Clinician access request listing and approval action dispatch.
-  - Scoped tamper-evident hash-chained audit log retrieval and cryptographic immutability explanation.
-- Frontend test suite: 2 test files, 16 passed (100% passing).
+- `frontend/src/tests/doctor.test.tsx`: 6 tests covering:
+  - Doctor verification status banner rendering for PENDING and VERIFIED statuses.
+  - Active consent listings with clinical purpose and expiration countdown display.
+  - Request submission for patient record consent with duration selection.
+  - Strict 200 API guard ensuring records render only upon authorized success.
+  - Absence of edit and delete actions in doctor UI (read-only clinical view).
+  - Controlled 403 access denial handling preventing unauthorized record rendering and clearing state.
+- Frontend test suite: 3 test files, 22 passed (100% passing).
 - Backend test suite: 11 test files, 86 passed, 1 skipped (100% passing).
-- Total tests passing: 102 passed, 1 skipped.
+- Total tests passing: 108 passed, 1 skipped.
 
 ## Manual Verification
 - Typecheck: `npm run typecheck:frontend` passed with 0 errors.
@@ -50,12 +40,10 @@ Completed (Ready for Review)
 - Backend typecheck: `npm run typecheck` passed cleanly across backend.
 
 ## Problems Found
-- `backend/vitest.config.ts` lacked an explicit `include` pattern, causing root `npm test` to run frontend tests in Node environment instead of jsdom.
-- `TableRowSkeleton` originally rendered `<div>` inside `<tbody>`, triggering a DOM nesting warning.
+- Doctor patient view needed explicit state clearing before fetch to prevent stale or unauthorized cache retention.
 
 ## Problems Fixed
-- Configured scoped `include` glob in `backend/vitest.config.ts`.
-- Updated `TableRowSkeleton` to render standard `<tr>` and `<td>` elements.
+- Enforced immediate state clearing (`setRecords([])`) on route change and before `GET /records` execution.
 
 ## Remaining Issues
 - None.
@@ -78,4 +66,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 12 — Doctor dashboard (Consent-aware UI, search patient by consent, requested/approved/expired status, read-only authorized view)
+Checkpoint 13 — Advanced Features 01–10 (Doctor Verification Queue, Notifications, Emergency Health Card, Share Links/QR, Medical Timeline, Health Analytics, AI Health Timeline, AI Comparison, Blockchain Explorer, Record Versioning)

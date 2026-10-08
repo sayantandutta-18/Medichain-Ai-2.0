@@ -7,6 +7,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   isVerified?: boolean;
+  verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
   lastLoginAt?: string;
 }
 
