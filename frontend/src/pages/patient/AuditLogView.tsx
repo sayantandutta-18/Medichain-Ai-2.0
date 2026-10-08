@@ -1,0 +1,155 @@
+import React, { useEffect, useState } from 'react';
+import { apiClient } from '../../api/client.js';
+import { AuditLog } from '../../types/records.js';
+import { TableRowSkeleton } from '../../components/common/Skeleton.js';
+import {
+  History,
+  Shield,
+  Lock,
+  FileText,
+  UserCheck,
+  Sparkles,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
+
+export const AuditLogView: React.FC = () => {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchAuditLogs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiClient.get('/audit/me');
+      setLogs(res.data.logs || []);
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message ||
+          'Failed to retrieve audit log history from server. Please retry.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, []);
+
+  const getActionIcon = (action: string) => {
+    if (action.includes('RECORD')) return <FileText className="w-4 h-4 text-teal-400" />;
+    if (action.includes('ACCESS') || action.includes('CONSENT'))
+      return <UserCheck className="w-4 h-4 text-emerald-400" />;
+    if (action.includes('AI')) return <Sparkles className="w-4 h-4 text-indigo-400" />;
+    return <Lock className="w-4 h-4 text-slate-400" />;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Privacy & Tamper-Evident Audit Trail</h1>
+          <p className="text-sm text-slate-400 mt-1">
+            Every read, upload, consent modification, and AI evaluation is permanently chained with SHA-256.
+          </p>
+        </div>
+        <button
+          onClick={fetchAuditLogs}
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-navy-800 hover:bg-slate-800 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition-colors cursor-pointer self-start sm:self-auto"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Refresh Audit Trail
+        </button>
+      </div>
+
+      {/* Hash-Chain Explanation Panel */}
+      <div className="bg-navy-900 border border-slate-800 rounded-2xl p-5 flex items-start gap-4">
+        <div className="p-3 bg-teal-500/10 border border-teal-500/20 rounded-xl shrink-0">
+          <Shield className="w-6 h-6 text-teal-400" />
+        </div>
+        <div className="space-y-1 text-xs">
+          <h2 className="text-sm font-bold text-white">Cryptographic Immutability</h2>
+          <p className="text-slate-300 leading-relaxed">
+            Each audit event binds the hash of the preceding event: <code className="text-teal-300 font-mono">hash = SHA-256(prevHash + timestamp + actor + action)</code>.
+            Any retroactive modification or deletion by an attacker causes verification failure.
+          </p>
+        </div>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="p-4 rounded-xl bg-red-950/50 border border-red-500/30 text-red-200 text-sm flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Table Container */}
+      <div className="bg-navy-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-800 bg-navy-950/60 text-slate-400 uppercase font-medium">
+                <th className="py-3 px-4">Timestamp</th>
+                <th className="py-3 px-4">Action</th>
+                <th className="py-3 px-4">Actor Role</th>
+                <th className="py-3 px-4">Request ID</th>
+                <th className="py-3 px-4">Chained Hash</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {loading ? (
+                <>
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                  <TableRowSkeleton />
+                </>
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center">
+                      <History className="w-8 h-8 text-slate-600 mb-2" />
+                      <p className="text-sm text-slate-300 font-medium">No audit entries found</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Your actions will be chronologically logged here.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log) => (
+                  <tr key={log._id} className="hover:bg-slate-850/50 transition-colors">
+                    <td className="py-3.5 px-4 text-slate-300 font-mono whitespace-nowrap">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {getActionIcon(log.action)}
+                        <span className="font-semibold text-white">{log.action}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <span className="px-2 py-0.5 rounded font-mono text-[10px] bg-slate-800 text-teal-300 border border-slate-700">
+                        {log.role}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-400 font-mono text-[11px] whitespace-nowrap truncate max-w-[120px]">
+                      {log.requestId}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-teal-400/90 truncate max-w-[160px]">
+                      {log.hash ? `${log.hash.substring(0, 16)}...` : 'genesis'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
