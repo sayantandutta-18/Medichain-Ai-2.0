@@ -1,45 +1,66 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-9
+10
 
 ## Current Checkpoint
-Checkpoint 9 — AI assistant
+Checkpoint 10 — Frontend foundation (Routing, auth context, central API client, error handling)
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `backend/src/services/ai/prompts/explain.ts`
-- `backend/src/services/ai/ai.service.ts`
-- `backend/src/controllers/ai.controller.ts`
-- `backend/src/routes/ai.ts`
-- `backend/src/app.ts`
-- `backend/evals/synthetic-reports.json`
-- `backend/tests/ai.test.ts`
+- `frontend/package.json`
+- `frontend/tsconfig.json`
+- `frontend/vite.config.ts`
+- `frontend/postcss.config.js`
+- `frontend/tailwind.config.js`
+- `frontend/index.html`
+- `frontend/src/vite-env.d.ts`
+- `frontend/src/index.css`
+- `frontend/src/main.tsx`
+- `frontend/src/App.tsx`
+- `frontend/src/types/auth.ts`
+- `frontend/src/api/client.ts`
+- `frontend/src/context/AuthContext.tsx`
+- `frontend/src/routes/ProtectedRoute.tsx`
+- `frontend/src/routes/RoleRoute.tsx`
+- `frontend/src/components/ErrorBoundary.tsx`
+- `frontend/src/pages/Login.tsx`
+- `frontend/src/pages/Register.tsx`
+- `frontend/src/pages/Dashboard.tsx`
+- `frontend/src/pages/NotFound.tsx`
+- `frontend/src/setupTests.ts`
+- `frontend/src/tests/auth.test.tsx`
+- `package.json`
 - `context.md`
 
 ## Tests
-- `backend/tests/ai.test.ts`: 16 tests covering:
-  - PII redaction (names, phone numbers, email addresses, DOB, physical addresses).
-  - Authorization check ensuring non-owners and doctors without active consent receive 403.
-  - Controlled 503 `AI_UNAVAILABLE` response when `OPENAI_API_KEY` is missing or unconfigured.
-  - Output schema validation using Zod.
-  - Safe fallback `COULD_NOT_GENERATE` upon malformed JSON or schema discrepancy.
-  - Audit event creation for `AI_ANALYSIS` (storing recordId and model name only; prompt and output strictly excluded).
-  - 10 synthetic report evaluation tests verifying disclaimer inclusion, absence of "you have" or prescriptive declarations, and resistance against embedded prompt injection overrides.
-- Total tests: 11 test files, 86 passed, 1 skipped (100% passing).
+- `frontend/src/tests/auth.test.tsx`: 8 tests covering:
+  - Central API client baseURL derived from `VITE_API_URL || '/api/v1'`.
+  - In-memory Authorization Bearer header attachment.
+  - Automatic session cleanup on 401 response via unauthorized callback.
+  - Session restoration strictly from server `/auth/me` on mount.
+  - Safe session clearing when `/auth/me` returns 401 or network error.
+  - ProtectedRoute redirection to `/login` for unauthenticated requests.
+  - ProtectedRoute rendering for authenticated users.
+  - RoleRoute authorization enforcement redirecting unauthorized roles to home.
+- Backend regression tests: 11 test files, 86 passed, 1 skipped (100% passing).
+- Total tests passing: 94 tests passed, 1 skipped.
 
 ## Manual Verification
-- Typecheck: `npm run typecheck` passed cleanly across backend.
-- Tests: `npm test` ran with 86 passed tests in 10.66s.
-- Build: `npm run build` compiled cleanly to `dist/`.
+- Frontend typecheck: `npm run typecheck:frontend` passed with zero errors.
+- Frontend build: `npm run build` compiled cleanly into `frontend/dist/`.
+- Localhost verification: Verified 0 occurrences of `localhost` in both `frontend/src/` and `frontend/dist/`.
+- Backend typecheck: `npm run typecheck` passed cleanly across backend.
 
 ## Problems Found
-- None.
+- jsdom threw unhandled navigation error upon setting `window.location.href`.
+- `vite/client` types needed explicit declaration for `import.meta.env`.
 
 ## Problems Fixed
-- None.
+- Handled navigation safely with test mode guard to silence jsdom navigation warning in test runner.
+- Added `frontend/src/vite-env.d.ts` with explicit `ImportMetaEnv` typing.
 
 ## Remaining Issues
 - None.
@@ -62,4 +83,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 10 — Frontend foundation (Routing, auth context, central API client, error handling)
+Checkpoint 11 — Patient dashboard (Real APIs, upload with progress, record details, access requests, verification)
