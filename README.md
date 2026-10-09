@@ -247,3 +247,5 @@ Located in `sui/sources/record_registry.move`:
 ## License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+#   M e d i c h a i n - A i - 2 . 0  
+ 
