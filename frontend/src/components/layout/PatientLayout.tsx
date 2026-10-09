@@ -18,6 +18,7 @@ import {
   Clock,
   Activity,
   Layers,
+  Target,
 } from 'lucide-react';
 import { NotificationBell } from '../common/NotificationBell.js';
 
@@ -30,10 +31,12 @@ export const PatientLayout: React.FC = () => {
     { to: '/records', label: 'My Records', icon: FileText },
     { to: '/timeline', label: 'Medical Timeline', icon: Clock },
     { to: '/analytics', label: 'Health Analytics', icon: Activity },
+    { to: '/goals', label: 'Health Goals', icon: Target },
     { to: '/explorer', label: 'Blockchain Explorer', icon: Layers },
     { to: '/upload', label: 'Upload Document', icon: Upload },
     { to: '/requests', label: 'Access Requests', icon: UserCheck },
-    { to: '/audit', label: 'Privacy & Audit Log', icon: History },
+    { to: '/activity', label: 'Activity Feed', icon: History },
+    { to: '/audit', label: 'Privacy & Audit Log', icon: Shield },
     { to: '/emergency', label: 'Emergency Card', icon: CreditCard },
     { to: '/appointments', label: 'Appointments', icon: Calendar },
     { to: '/medications', label: 'Medications', icon: Pill },

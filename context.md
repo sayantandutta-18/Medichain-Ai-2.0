@@ -1,89 +1,82 @@
 # MediChain-AI Project Context
 
 ## Current Phase
-13
+14
 
 ## Current Checkpoint
-Checkpoint 13 — Advanced Features 01–10 (Doctor Verification Queue, In-App Notifications, Emergency Health Card, Patient Share Links/QR, Medical Timeline, Health Analytics & Vitals Tracker, AI Health Timeline, AI Comparison Tool, Blockchain Explorer, Medical Record Versioning)
+Checkpoint 14 — Advanced Features 11–20 (Offline Emergency Access, Doctor Notes & Annotations, Patient Activity Feed, FHIR/HL7 Import/Export, Caregiver Proxy Delegation, Zero-Knowledge Proofs, Prescription Management, Automated Drug Interaction Warning, Health Goal Tracking, Telehealth Consultation Link Integration)
 
 ## Status
 Completed (Ready for Review)
 
 ## Files Changed
-- `backend/src/models/User.ts` (doctor verification fields: licenseNumber, verificationStatus, verifiedAt, verifiedBy)
-- `backend/src/models/MedicalRecord.ts` (IRecordVersion sub-schema and currentVersion tracking)
-- `backend/src/models/HealthMetric.ts` (health metrics and vitals tracking model with units)
-- `backend/src/models/index.ts` (HealthMetric model export)
-- `backend/src/services/notification.service.ts` (in-app notification delivery service with TTL cleanup)
-- `backend/src/services/ai/prompts/explain.ts` (comparison and chronological health timeline prompts)
-- `backend/src/services/ai/ai.service.ts` (compareRecords and explainTimeline methods with safety schemas)
-- `backend/src/controllers/admin.controller.ts` (doctor license verification queue, approval, rejection)
-- `backend/src/controllers/notification.controller.ts` (notification query, mark read, mark all read)
-- `backend/src/controllers/emergency.controller.ts` (emergency card profile query/update and public token allow-list viewer)
-- `backend/src/controllers/share.controller.ts` (cryptographic share links, SHA-256 token hashing, single-use gating, revocation)
-- `backend/src/controllers/analytics.controller.ts` (health vitals logging, truthful stats calculations)
-- `backend/src/controllers/blockchain.controller.ts` (Sui blockchain ledger explorer data, proof verification, testnet links)
-- `backend/src/controllers/record.controller.ts` (timeline grouping by year and record versioning upload/list)
-- `backend/src/controllers/access.controller.ts` (doctor verification checks and notification triggers)
-- `backend/src/controllers/ai.controller.ts` (compareRecords and explainTimeline HTTP handlers)
-- `backend/src/routes/admin.ts`
-- `backend/src/routes/notification.ts`
-- `backend/src/routes/emergency.ts`
-- `backend/src/routes/share.ts`
-- `backend/src/routes/analytics.ts`
-- `backend/src/routes/blockchain.ts`
-- `backend/src/routes/record.ts`
-- `backend/src/routes/ai.ts`
-- `backend/src/app.ts` (mounting all advanced feature routers)
-- `backend/tests/advanced.features.test.ts` (comprehensive integration test suite for features 01–10)
-- `frontend/src/api/client.ts` (api alias export)
-- `frontend/src/types/records.ts` (versioning fields on MedicalRecord)
-- `frontend/src/components/common/NotificationBell.tsx` (live notification bell with unread badge counter)
-- `frontend/src/pages/patient/MedicalTimeline.tsx` (chronological event history and AI timeline trigger)
-- `frontend/src/pages/patient/HealthAnalytics.tsx` (vitals recording and statistical summary dashboard)
-- `frontend/src/pages/common/BlockchainExplorer.tsx` (on-chain Sui proof explorer)
-- `frontend/src/pages/admin/DoctorVerification.tsx` (admin practitioner verification portal)
-- `frontend/src/pages/patient/EmergencyCard.tsx` (emergency health card editor and public link generator)
-- `frontend/src/pages/public/PublicEmergencyView.tsx` (first-responder minimal allow-list viewer)
-- `frontend/src/pages/public/PublicShareView.tsx` (patient-shared document decryptor view)
-- `frontend/src/pages/patient/RecordsList.tsx` (share modal, version history modal, and AI comparison modal)
-- `frontend/src/components/layout/PatientLayout.tsx` (notification bell and updated portal navigation)
-- `frontend/src/components/layout/DoctorLayout.tsx` (notification bell and blockchain explorer link)
-- `frontend/src/App.tsx` (routing configuration for all new pages)
-- `frontend/src/tests/doctor.test.tsx` (notification-aware mocking)
+- `backend/src/models/ClinicalNote.ts` (doctor clinical notes model with AES-256-GCM encryption payload and tags)
+- `backend/src/models/HealthGoal.ts` (health milestones and targets tracking model with status evaluation)
+- `backend/src/models/index.ts` (exporting ClinicalNote and HealthGoal models)
+- `backend/src/controllers/offline.controller.ts` (Feature 11: offline emergency package generation and SHA-256 integrity verification)
+- `backend/src/controllers/clinicalNote.controller.ts` (Feature 12: doctor encrypted clinical notes with AAD authentication bound to note and patient)
+- `backend/src/controllers/activity.controller.ts` (Feature 13: security audit log and consent lifecycle timeline aggregator)
+- `backend/src/controllers/fhir.controller.ts` (Feature 14: HL7 FHIR Release 4 export and observation import)
+- `backend/src/controllers/proxy.controller.ts` (Feature 15: caregiver proxy access delegation and revocation)
+- `backend/src/controllers/proof.controller.ts` (Feature 16: zero-knowledge cryptographic claim commitments and preimage verification)
+- `backend/src/controllers/prescription.controller.ts` (Feature 17 & 18: physician prescription issuance, refills, and automated drug-drug interaction checker engine)
+- `backend/src/controllers/goal.controller.ts` (Feature 19: health goals management and dynamic progress computation against vitals)
+- `backend/src/controllers/appointment.controller.ts` (Feature 20: conflict-free appointment booking and E2EE telehealth consultation room token generation)
+- `backend/src/routes/offline.ts`
+- `backend/src/routes/clinicalNote.ts`
+- `backend/src/routes/activity.ts`
+- `backend/src/routes/fhir.ts`
+- `backend/src/routes/proxy.ts`
+- `backend/src/routes/proof.ts`
+- `backend/src/routes/prescription.ts`
+- `backend/src/routes/goal.ts`
+- `backend/src/routes/appointment.ts`
+- `backend/src/app.ts` (mounting all features 11–20 routers)
+- `backend/tests/features11_20.test.ts` (integration test suite covering all 10 features 11–20)
+- `frontend/src/pages/patient/Appointments.tsx` (Feature 20: consultation scheduling, calendar listing, and E2EE video consultation room)
+- `frontend/src/pages/patient/Medications.tsx` (Feature 17 & 18: prescription list, refill requests, and interactive automated drug interaction checker)
+- `frontend/src/pages/patient/ActivityFeed.tsx` (Feature 13: authenticated patient security activity feed)
+- `frontend/src/pages/patient/HealthGoals.tsx` (Feature 19: health milestone goal tracker and progress visualization)
+- `frontend/src/pages/patient/EmergencyCard.tsx` (Feature 11: offline emergency package download and SHA-256 integrity verification)
+- `frontend/src/pages/patient/ConsentRequests.tsx` (Feature 15: caregiver proxy delegation and revocation tab)
+- `frontend/src/pages/patient/RecordsList.tsx` (Feature 14 & 16: FHIR R4 Bundle export/import modal and Zero-Knowledge Proof commitment modal)
+- `frontend/src/pages/doctor/DoctorPatientRecords.tsx` (Feature 12: doctor encrypted clinical notes with AAD verification)
+- `frontend/src/components/layout/PatientLayout.tsx` (navigation updated for Activity Feed and Health Goals)
+- `frontend/src/App.tsx` (registered `/activity` and `/goals` routes)
+- `frontend/src/tests/features11_20.test.tsx` (frontend component test suite for features 11–20)
 - `context.md`
 
 ## Tests
-- `backend/tests/advanced.features.test.ts`: 9 integration tests covering:
-  - Feature 01: Doctor registration pending review, admin verification approval and access gating.
-  - Feature 02: Notification creation, unread listing, individual mark-as-read, and mark-all-read.
-  - Feature 03: Emergency health card update, authenticated fetch, and unauthenticated public allow-list triage view.
-  - Feature 04: Patient share links, opaque 32-byte token creation, single-use consumption gating, and revocation.
-  - Feature 05: Medical timeline chronological year grouping and record metadata filtering.
-  - Feature 06: Health vitals logging and truthful statistical summary calculations (min, max, average, count).
-  - Feature 09: Sui blockchain explorer proof metadata and testnet explorer URL derivation.
-  - Feature 10: Medical record versioning, immutable archival, and current version progression.
-- Backend test suite: 12 test files, 95 passed, 1 skipped (100% passing).
-- Frontend test suite: 3 test files, 22 passed (100% passing).
-- Total tests passing: 117 passed, 1 skipped.
+- `backend/tests/features11_20.test.ts`: 9 integration tests covering:
+  - Feature 11: Offline package generation with AES-256-GCM encryption and SHA-256 tamper verification.
+  - Feature 12: Doctor creates encrypted clinical note and views decrypted history under verified consent.
+  - Feature 13: Activity feed aggregates security audit logs and access requests.
+  - Feature 14: FHIR R4 Bundle export and observation import into health metrics.
+  - Feature 15: Caregiver proxy access grant, listing, and revocation.
+  - Feature 16: Cryptographic proof commitments and verification with blinding factors.
+  - Feature 17 & 18: Doctor prescription issuance, automated drug-drug interaction warning (Warfarin + Aspirin), and refills.
+  - Feature 19: Health goals creation and progress tracking against recorded vitals.
+  - Feature 20: Telehealth appointment scheduling, conflict checks, E2EE room token derivation, and cancellation.
+- Backend test suite: 13 test files, 104 passed, 1 skipped (100% passing).
+- Frontend test suite: 4 test files, 26 passed (100% passing).
+- Total tests passing: 130 passed, 1 skipped.
 
 ## Manual Verification
 - Typecheck backend: `npx tsc --noEmit` passed with 0 errors.
 - Typecheck frontend: `npx tsc --noEmit` passed with 0 errors.
-- Frontend build: `npm run build:frontend` compiled cleanly into `dist/`.
+- Frontend production build: `npm run build:frontend` compiled cleanly into `dist/`.
 - Localhost verification: Verified 0 occurrences of `localhost` in both `frontend/src/` and `frontend/dist/`.
 
 ## Problems Found
-- `NotificationService.notify` required `userId` but callers used `recipientId`.
-- Duplicate upload validation correctly rejected identical synthetic PDF bytes in tests.
-- Share link creation required `scope` rather than defaulting based on payload context.
-- Unmocked notification requests in JSDOM tests caused network errors during layout rendering.
+- `MedicalRecord` schema uses `type`, `originalFilename`, `sha256`, and `deletedAt` rather than `documentType` and `isDeleted`.
+- Unused imports triggered TypeScript strict compiler errors in frontend components.
+- Selectors in frontend tests required `getAllByText` when text appeared in multiple badges/buttons.
+- `useAuth` hook required `AuthProvider` wrapper or mock during component unit testing.
 
 ## Problems Fixed
-- Supported both `userId` and `recipientId` in `NotificationService`.
-- Generated distinct synthetic PDF byte headers for test documents to satisfy patient deduplication.
-- Added intelligent defaults and duration transformation in `ShareController`.
-- Handled notification route resolution in frontend test mocks.
+- Updated `FhirController` to map correct `MedicalRecord` field names and non-null dates.
+- Cleaned up unused imports across all frontend pages to satisfy strict `noUnusedLocals`.
+- Adjusted frontend component tests to mock `useAuth` and use flexible element query matchers.
 
 ## Remaining Issues
 - None.
@@ -106,4 +99,4 @@ Completed (Ready for Review)
 - `VITE_API_URL`
 
 ## Next Checkpoint
-Checkpoint 14 — Advanced Features 11–20 (Offline Emergency Access, Doctor Notes & Annotations, Patient Activity Feed, FHIR/HL7 Import/Export, Multi-Signature Consents, Zero-Knowledge Proofs, Prescription Management, Automated Drug Interaction Warning, Health Goal Tracking, Telehealth Appointment Link Integration)
+Checkpoint 15 — Advanced Features 21–26 & Voice Assistant (Emergency QR Code Generation, Multi-Language Document Translation, Automated Consent Expiration Service, Webhook Integrations, Health Data Aggregator, Multi-Device Active Session Manager, and Voice AI Assistant with preview-and-confirmation)

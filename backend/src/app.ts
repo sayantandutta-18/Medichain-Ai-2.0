@@ -17,6 +17,15 @@ import { shareRouter } from './routes/share.js';
 import { analyticsRouter } from './routes/analytics.js';
 import { adminRouter } from './routes/admin.js';
 import { blockchainRouter } from './routes/blockchain.js';
+import { offlineRouter } from './routes/offline.js';
+import { clinicalNoteRouter } from './routes/clinicalNote.js';
+import { activityRouter } from './routes/activity.js';
+import { fhirRouter } from './routes/fhir.js';
+import { proxyRouter } from './routes/proxy.js';
+import { proofRouter } from './routes/proof.js';
+import { prescriptionRouter } from './routes/prescription.js';
+import { goalRouter } from './routes/goal.js';
+import { appointmentRouter } from './routes/appointment.js';
 
 export function createApp(): Express {
   const app = express();
@@ -57,6 +66,15 @@ export function createApp(): Express {
   app.use('/api/v1', analyticsRouter);
   app.use('/api/v1', adminRouter);
   app.use('/api/v1', blockchainRouter);
+  app.use('/api/v1', offlineRouter);
+  app.use('/api/v1', clinicalNoteRouter);
+  app.use('/api/v1', activityRouter);
+  app.use('/api/v1', fhirRouter);
+  app.use('/api/v1', proxyRouter);
+  app.use('/api/v1', proofRouter);
+  app.use('/api/v1', prescriptionRouter);
+  app.use('/api/v1', goalRouter);
+  app.use('/api/v1', appointmentRouter);
 
   // 404 handler for unknown routes
   app.use(notFoundHandler);

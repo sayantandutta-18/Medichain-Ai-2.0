@@ -17,6 +17,8 @@ import {
   Info,
   ArrowLeft,
   UserPlus,
+  FileEdit,
+  Save,
 } from 'lucide-react';
 
 export const DoctorPatientRecords: React.FC = () => {
@@ -50,6 +52,7 @@ export const DoctorPatientRecords: React.FC = () => {
       const res = await apiClient.get(`/records?patientId=${patientId}`);
       // Render ONLY after API returns 200
       setRecords(res.data.records || []);
+      fetchClinicalNotes();
     } catch (err: any) {
       // Backend policy rejected access
       setAccessDenied(true);
@@ -60,6 +63,43 @@ export const DoctorPatientRecords: React.FC = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Feature 12: Clinical Notes State
+  const [clinicalNotes, setClinicalNotes] = useState<any[]>([]);
+  const [newNoteContent, setNewNoteContent] = useState<string>('');
+  const [newNoteTags, setNewNoteTags] = useState<string>('');
+  const [savingNote, setSavingNote] = useState<boolean>(false);
+
+  const fetchClinicalNotes = async () => {
+    if (!patientId) return;
+    try {
+      const res = await apiClient.get(`/clinical-notes/patient/${patientId}`);
+      setClinicalNotes(res.data.notes || []);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleAddClinicalNote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newNoteContent.trim() || !patientId) return;
+    try {
+      setSavingNote(true);
+      const tags = newNoteTags.split(',').map((t) => t.trim()).filter(Boolean);
+      await apiClient.post('/clinical-notes', {
+        patientId,
+        content: newNoteContent.trim(),
+        tags,
+      });
+      setNewNoteContent('');
+      setNewNoteTags('');
+      await fetchClinicalNotes();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to add clinical note');
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -238,6 +278,91 @@ export const DoctorPatientRecords: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Feature 12: Doctor Clinical Notes Section */}
+      {!accessDenied && (
+        <div className="bg-navy-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl">
+                <FileEdit className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Physician Clinical Notes & Annotations</h3>
+                <p className="text-xs text-slate-400">
+                  AES-256-GCM encrypted notes with AAD authentication bound to patient
+                </p>
+              </div>
+            </div>
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono bg-teal-500/10 text-teal-300 border border-teal-500/30">
+              {clinicalNotes.length} Note(s)
+            </span>
+          </div>
+
+          {/* New Note Form */}
+          <form onSubmit={handleAddClinicalNote} className="space-y-3 bg-navy-950 p-4 rounded-2xl border border-slate-800">
+            <textarea
+              rows={2}
+              required
+              placeholder="Enter clinical assessment or note..."
+              value={newNoteContent}
+              onChange={(e) => setNewNoteContent(e.target.value)}
+              className="w-full bg-navy-900 border border-slate-700 rounded-xl p-3 text-white text-xs focus:outline-none focus:border-indigo-500"
+            />
+            <div className="flex flex-col sm:flex-row gap-2 items-center justify-between">
+              <input
+                type="text"
+                placeholder="Tags (comma-separated, e.g. followup, vitals)"
+                value={newNoteTags}
+                onChange={(e) => setNewNoteTags(e.target.value)}
+                className="w-full sm:w-72 bg-navy-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white"
+              />
+              <button
+                type="submit"
+                disabled={savingNote}
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {savingNote ? 'Encrypting & Saving...' : 'Save Encrypted Note'}
+              </button>
+            </div>
+          </form>
+
+          {/* Notes List */}
+          {clinicalNotes.length > 0 && (
+            <div className="space-y-3 pt-2">
+              {clinicalNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className="p-4 bg-navy-950 rounded-2xl border border-slate-800 text-xs space-y-2"
+                >
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span className="font-semibold text-slate-300">
+                      Dr. {note.doctorId?.firstName ? `${note.doctorId.firstName} ${note.doctorId.lastName || ''}` : 'Verified Physician'}
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-500">
+                      {new Date(note.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-slate-200 whitespace-pre-wrap">{note.content}</p>
+                  {note.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {note.tags.map((t: string, idx: number) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700 font-mono"
+                        >
+                          #{t}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

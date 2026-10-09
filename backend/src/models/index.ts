@@ -12,3 +12,5 @@ export * from './Organization.js';
 export * from './Membership.js';
 export * from './SecurityEvent.js';
 export * from './HealthMetric.js';
+export * from './ClinicalNote.js';
+export * from './HealthGoal.js';

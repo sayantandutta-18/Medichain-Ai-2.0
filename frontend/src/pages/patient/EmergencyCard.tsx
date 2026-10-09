@@ -12,6 +12,8 @@ import {
   X,
   Plus,
   Trash2,
+  Download,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface EmergencyContact {
@@ -127,6 +129,41 @@ export const EmergencyCard: React.FC = () => {
       navigator.clipboard.writeText(publicUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const [offlineStatus, setOfflineStatus] = useState<string | null>(null);
+
+  const handleDownloadOfflinePackage = async () => {
+    try {
+      const res = await api.post('/offline/package');
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `medichain-offline-card-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setOfflineStatus(`Downloaded. Integrity Hash: ${res.data.integrityHash.slice(0, 16)}...`);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to generate offline package');
+    }
+  };
+
+  const handleVerifyOfflinePackage = async () => {
+    try {
+      const res = await api.post('/offline/package');
+      const verifyRes = await api.post('/offline/verify', {
+        integrityHash: res.data.integrityHash,
+        serializedData: JSON.stringify(res.data.data),
+      });
+      if (verifyRes.data.verified) {
+        setOfflineStatus('VERIFIED: Cryptographic package matches SHA-256 integrity hash.');
+      } else {
+        setOfflineStatus('TAMPERED: Offline package failed cryptographic integrity.');
+      }
+    } catch {
+      setOfflineStatus('Verification check failed.');
     }
   };
 
@@ -403,7 +440,7 @@ export const EmergencyCard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={copyLink}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-xl transition-colors font-medium text-xs"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-xl transition-colors font-medium text-xs cursor-pointer"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copied ? 'Copied' : 'Copy Emergency Link'}</span>
@@ -413,6 +450,44 @@ export const EmergencyCard: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Feature 11: Offline Emergency Storage & Verification */}
+      <div className="bg-navy-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl">
+            <ShieldCheck className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-white">Offline Cryptographic Emergency Vault</h2>
+            <p className="text-xs text-slate-400">
+              Generate tamper-evident offline JSON package with SHA-256 integrity hash verification
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={handleDownloadOfflinePackage}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            Download Offline Encrypted Package
+          </button>
+          <button
+            onClick={handleVerifyOfflinePackage}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+          >
+            <ShieldCheck className="w-4 h-4 text-teal-400" />
+            Verify Cryptographic Integrity
+          </button>
+        </div>
+
+        {offlineStatus && (
+          <div className="p-3 bg-navy-950 border border-slate-800 rounded-xl text-xs font-mono text-teal-300">
+            {offlineStatus}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

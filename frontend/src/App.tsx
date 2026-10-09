@@ -20,6 +20,8 @@ import { AuditLogView } from './pages/patient/AuditLogView.js';
 import { EmergencyCard } from './pages/patient/EmergencyCard.js';
 import { Appointments } from './pages/patient/Appointments.js';
 import { Medications } from './pages/patient/Medications.js';
+import { ActivityFeed } from './pages/patient/ActivityFeed.js';
+import { HealthGoals } from './pages/patient/HealthGoals.js';
 
 // Common Pages
 import { BlockchainExplorer } from './pages/common/BlockchainExplorer.js';
@@ -82,6 +84,8 @@ export const App: React.FC = () => {
               <Route path="/emergency" element={<EmergencyCard />} />
               <Route path="/appointments" element={<Appointments />} />
               <Route path="/medications" element={<Medications />} />
+              <Route path="/activity" element={<ActivityFeed />} />
+              <Route path="/goals" element={<HealthGoals />} />
             </Route>
 
             {/* Authenticated Doctor Portal */}

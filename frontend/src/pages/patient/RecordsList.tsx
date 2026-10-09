@@ -29,6 +29,8 @@ import {
   GitCompare,
   Copy,
   Check,
+  Database,
+  Key,
 } from 'lucide-react';
 
 export const RecordsList: React.FC = () => {
@@ -79,6 +81,22 @@ export const RecordsList: React.FC = () => {
   const [newVersionFile, setNewVersionFile] = useState<File | null>(null);
   const [newVersionNote, setNewVersionNote] = useState<string>('');
   const [uploadingVersion, setUploadingVersion] = useState<boolean>(false);
+
+  // Feature 14: FHIR State
+  const [fhirModalOpen, setFhirModalOpen] = useState<boolean>(false);
+  const [fhirExporting, setFhirExporting] = useState<boolean>(false);
+  const [fhirImportFile, setFhirImportFile] = useState<File | null>(null);
+  const [fhirImporting, setFhirImporting] = useState<boolean>(false);
+  const [fhirImportStatus, setFhirImportStatus] = useState<string | null>(null);
+
+  // Feature 16: Proof State
+  const [proofModalOpen, setProofModalOpen] = useState<boolean>(false);
+  const [proofClaim, setProofClaim] = useState<string>('');
+  const [proofBlinding, setProofBlinding] = useState<string>('');
+  const [proofCommitment, setProofCommitment] = useState<string | null>(null);
+  const [proofCommitLoading, setProofCommitLoading] = useState<boolean>(false);
+  const [verifyProofCommitment, setVerifyProofCommitment] = useState<string>('');
+  const [verifyProofStatus, setVerifyProofStatus] = useState<string | null>(null);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -284,6 +302,77 @@ export const RecordsList: React.FC = () => {
     }
   };
 
+  const handleExportFhir = async () => {
+    try {
+      setFhirExporting(true);
+      const res = await apiClient.get('/fhir/export');
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `medichain-fhir-r4-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to export FHIR bundle');
+    } finally {
+      setFhirExporting(false);
+    }
+  };
+
+  const handleImportFhir = async () => {
+    if (!fhirImportFile) return;
+    try {
+      setFhirImporting(true);
+      setFhirImportStatus(null);
+      const text = await fhirImportFile.text();
+      const parsed = JSON.parse(text);
+      const res = await apiClient.post('/fhir/import', parsed);
+      setFhirImportStatus(`Successfully imported ${res.data.importedObservations} FHIR observation(s) into health metrics!`);
+      setFhirImportFile(null);
+    } catch (err: any) {
+      setFhirImportStatus(err.response?.data?.message || 'Failed to import FHIR bundle (must be valid JSON bundle)');
+    } finally {
+      setFhirImporting(false);
+    }
+  };
+
+  const handleCreateProofCommitment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proofClaim.trim() || !proofBlinding.trim()) return;
+    try {
+      setProofCommitLoading(true);
+      const res = await apiClient.post('/proofs/commit', {
+        claim: proofClaim.trim(),
+        blindingFactor: proofBlinding.trim(),
+      });
+      setProofCommitment(res.data.commitment);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to generate cryptographic proof commitment');
+    } finally {
+      setProofCommitLoading(false);
+    }
+  };
+
+  const handleVerifyProof = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proofClaim.trim() || !proofBlinding.trim() || !verifyProofCommitment.trim()) return;
+    try {
+      const res = await apiClient.post('/proofs/verify', {
+        claim: proofClaim.trim(),
+        blindingFactor: proofBlinding.trim(),
+        commitment: verifyProofCommitment.trim(),
+      });
+      if (res.data.verified) {
+        setVerifyProofStatus('VERIFIED: The commitment matches the claim and secret blinding factor cryptographically.');
+      } else {
+        setVerifyProofStatus('INVALID: The commitment did not match the provided pre-image.');
+      }
+    } catch (err: any) {
+      setVerifyProofStatus(err.response?.data?.message || 'Verification check failed');
+    }
+  };
+
   const recordTypes: Array<{ label: string; value: string }> = [
     { label: 'All Types', value: 'ALL' },
     { label: 'Lab Reports', value: 'LAB_REPORT' },
@@ -305,23 +394,37 @@ export const RecordsList: React.FC = () => {
             Cryptographically sealed vault with verifiable tamper-evidence.
           </p>
         </div>
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          <button
+            onClick={() => setFhirModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-navy-900 hover:bg-slate-800 text-teal-300 border border-teal-500/30 rounded-xl text-xs font-semibold transition-all shadow-md cursor-pointer"
+          >
+            <Database className="w-3.5 h-3.5 text-teal-400" />
+            FHIR R4 Bundle
+          </button>
+          <button
+            onClick={() => setProofModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-navy-900 hover:bg-slate-800 text-teal-300 border border-teal-500/30 rounded-xl text-xs font-semibold transition-all shadow-md cursor-pointer"
+          >
+            <Key className="w-3.5 h-3.5 text-teal-400" />
+            ZK Proofs
+          </button>
           <button
             onClick={() => {
               setCompareModalOpen(true);
               setCompareResult(null);
               setCompareError(null);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-navy-900 hover:bg-slate-800 text-teal-300 border border-teal-500/30 rounded-xl text-sm font-semibold transition-all shadow-md cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-navy-900 hover:bg-slate-800 text-teal-300 border border-teal-500/30 rounded-xl text-xs font-semibold transition-all shadow-md cursor-pointer"
           >
-            <GitCompare className="w-4 h-4 text-teal-400" />
-            Compare Records (AI)
+            <GitCompare className="w-3.5 h-3.5 text-teal-400" />
+            Compare Records
           </button>
           <Link
             to="/upload"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-teal-900/30 cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-semibold transition-all shadow-lg shadow-teal-900/30 cursor-pointer"
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-3.5 h-3.5" />
             Upload Record
           </Link>
         </div>
@@ -971,6 +1074,166 @@ export const RecordsList: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      </Modal>
+
+      {/* Feature 14: FHIR R4 Bundle Modal */}
+      <Modal
+        isOpen={fhirModalOpen}
+        onClose={() => {
+          setFhirModalOpen(false);
+          setFhirImportStatus(null);
+        }}
+        title="FHIR R4 Interoperability (Import & Export)"
+      >
+        <div className="space-y-6 text-xs">
+          <div className="p-3 bg-teal-500/10 border border-teal-500/30 rounded-xl text-teal-200">
+            Export or import clinical records compliant with HL7 FHIR Release 4 (Bundle, Patient, DocumentReference, Observation).
+          </div>
+
+          {/* Export Section */}
+          <div className="bg-navy-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <h4 className="font-bold text-white text-sm">Export Health Profile as FHIR R4</h4>
+            <p className="text-slate-400">
+              Download your complete encrypted records registry and recorded observations bundled as a standard FHIR JSON archive.
+            </p>
+            <button
+              onClick={handleExportFhir}
+              disabled={fhirExporting}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              {fhirExporting ? 'Generating Bundle...' : 'Export & Download FHIR Bundle'}
+            </button>
+          </div>
+
+          {/* Import Section */}
+          <div className="bg-navy-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <h4 className="font-bold text-white text-sm">Import FHIR R4 Bundle</h4>
+            <p className="text-slate-400">
+              Upload a valid FHIR R4 JSON file to parse clinical Observations into your health metrics vitals tracker.
+            </p>
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => setFhirImportFile(e.target.files?.[0] || null)}
+              className="block w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700"
+            />
+            <button
+              onClick={handleImportFhir}
+              disabled={!fhirImportFile || fhirImporting}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition-colors disabled:opacity-40 cursor-pointer"
+            >
+              <Upload className="w-4 h-4" />
+              {fhirImporting ? 'Parsing Bundle...' : 'Import Observations into Vitals'}
+            </button>
+
+            {fhirImportStatus && (
+              <div className="p-3 bg-navy-900 border border-teal-500/30 rounded-xl text-teal-300">
+                {fhirImportStatus}
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
+
+      {/* Feature 16: Zero-Knowledge / Cryptographic Proof Modal */}
+      <Modal
+        isOpen={proofModalOpen}
+        onClose={() => {
+          setProofModalOpen(false);
+          setProofCommitment(null);
+          setVerifyProofStatus(null);
+        }}
+        title="Zero-Knowledge Cryptographic Proof Commitments"
+      >
+        <div className="space-y-6 text-xs">
+          <div className="p-3 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-indigo-200">
+            Generate verifiable commitments for medical claims without disclosing sensitive record content.
+          </div>
+
+          {/* Generate Commitment */}
+          <form onSubmit={handleCreateProofCommitment} className="bg-navy-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <h4 className="font-bold text-white text-sm flex items-center gap-2">
+              <Key className="w-4 h-4 text-teal-400" />
+              Generate Claim Commitment
+            </h4>
+            <div>
+              <label className="block text-slate-400 mb-1">Medical Claim / Statement</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. COVID-19 mRNA vaccination series completed"
+                value={proofClaim}
+                onChange={(e) => setProofClaim(e.target.value)}
+                className="w-full bg-navy-900 border border-slate-700 rounded-xl p-2.5 text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-slate-400 mb-1">Secret Blinding Factor / Salt (min 8 chars)</label>
+              <input
+                type="text"
+                required
+                placeholder="Keep this secret to prove claim later..."
+                value={proofBlinding}
+                onChange={(e) => setProofBlinding(e.target.value)}
+                className="w-full bg-navy-900 border border-slate-700 rounded-xl p-2.5 text-white font-mono"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={proofCommitLoading}
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-semibold cursor-pointer disabled:opacity-50"
+            >
+              {proofCommitLoading ? 'Computing...' : 'Create Commitment Hash'}
+            </button>
+
+            {proofCommitment && (
+              <div className="p-3 bg-navy-900 border border-teal-500/30 rounded-xl space-y-1">
+                <span className="text-slate-400 block text-[10px] uppercase">SHA-256 Commitment Hash</span>
+                <p className="font-mono text-teal-300 break-all">{proofCommitment}</p>
+              </div>
+            )}
+          </form>
+
+          {/* Verify Commitment */}
+          <form onSubmit={handleVerifyProof} className="bg-navy-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <h4 className="font-bold text-white text-sm flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-teal-400" />
+              Verify Cryptographic Commitment
+            </h4>
+            <div>
+              <label className="block text-slate-400 mb-1">Commitment Hash to Verify (64 hex characters)</label>
+              <input
+                type="text"
+                required
+                placeholder="Paste commitment hash..."
+                value={verifyProofCommitment}
+                onChange={(e) => setVerifyProofCommitment(e.target.value)}
+                className="w-full bg-navy-900 border border-slate-700 rounded-xl p-2.5 text-white font-mono"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold cursor-pointer"
+            >
+              Verify Proof Preimage
+            </button>
+
+            {verifyProofStatus && (
+              <div
+                className={`p-3 rounded-xl border font-semibold ${
+                  verifyProofStatus.includes('VERIFIED')
+                    ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
+                    : 'bg-rose-950/40 border-rose-500/40 text-rose-300'
+                }`}
+              >
+                {verifyProofStatus}
+              </div>
+            )}
+          </form>
         </div>
       </Modal>
     </div>
