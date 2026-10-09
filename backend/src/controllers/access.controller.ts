@@ -9,6 +9,7 @@ import { NotificationService } from '../services/notification.service.js';
 import { createAccessRequestSchema, approveAccessRequestSchema } from '../validators/access.validator.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { sha256 } from '../utils/hash.js';
+import { ConsentExpirationService } from '../services/consentExpiration.service.js';
 
 export class AccessController {
   public static async createRequest(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -319,6 +320,19 @@ export class AccessController {
       res.setHeader('Content-Type', 'application/json');
       res.setHeader('Content-Disposition', `attachment; filename="consent-receipt-${requestDoc._id}.json"`);
       res.status(200).send(JSON.stringify(requestDoc.receipt, null, 2));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async checkExpiredConsents(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new AppError('Unauthorized', 401);
+      const result = await ConsentExpirationService.processExpiredConsents();
+      res.status(200).json({
+        message: 'Consent expiration scan completed successfully',
+        ...result,
+      });
     } catch (err) {
       next(err);
     }

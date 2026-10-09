@@ -32,7 +32,10 @@ export class AuthController {
   public static async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const validated = loginSchema.parse(req.body);
-      const result = await AuthService.login(validated);
+      const result = await AuthService.login(validated, {
+        userAgent: (req.headers['user-agent'] as string) || 'Browser Client',
+        ip: req.ip,
+      });
 
       await AuditService.record({
         actorId: result.user.id,
@@ -47,6 +50,7 @@ export class AuthController {
         message: 'Login successful',
         user: result.user,
         tokens: result.tokens,
+        sessionId: result.sessionId,
       });
     } catch (err) {
       next(err);

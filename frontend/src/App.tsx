@@ -22,6 +22,7 @@ import { Appointments } from './pages/patient/Appointments.js';
 import { Medications } from './pages/patient/Medications.js';
 import { ActivityFeed } from './pages/patient/ActivityFeed.js';
 import { HealthGoals } from './pages/patient/HealthGoals.js';
+import { SecuritySettings } from './pages/patient/SecuritySettings.js';
 
 // Common Pages
 import { BlockchainExplorer } from './pages/common/BlockchainExplorer.js';
@@ -86,6 +87,7 @@ export const App: React.FC = () => {
               <Route path="/medications" element={<Medications />} />
               <Route path="/activity" element={<ActivityFeed />} />
               <Route path="/goals" element={<HealthGoals />} />
+              <Route path="/security" element={<SecuritySettings />} />
             </Route>
 
             {/* Authenticated Doctor Portal */}

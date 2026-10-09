@@ -9,4 +9,5 @@ accessRouter.get('/access-requests', requireAuth, AccessController.listRequests)
 accessRouter.post('/access-requests/:id/approve', requireAuth, AccessController.approveRequest);
 accessRouter.post('/access-requests/:id/reject', requireAuth, AccessController.rejectRequest);
 accessRouter.post('/access-requests/:id/revoke', requireAuth, AccessController.revokeRequest);
+accessRouter.post('/access-requests/expire-check', requireAuth, AccessController.checkExpiredConsents);
 accessRouter.get('/access-requests/:id/receipt', requireAuth, AccessController.downloadReceipt);

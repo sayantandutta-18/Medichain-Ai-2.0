@@ -15,6 +15,8 @@ import {
   Download,
   ShieldCheck,
 } from 'lucide-react';
+import { Modal } from '../../components/common/Modal.js';
+
 
 interface EmergencyContact {
   name: string;
@@ -50,6 +52,8 @@ export const EmergencyCard: React.FC = () => {
   const [allergies, setAllergies] = useState<string[]>([]);
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [conditionsSummary, setConditionsSummary] = useState<string>('');
+  const [qrSvg, setQrSvg] = useState<string | null>(null);
+  const [qrModalOpen, setQrModalOpen] = useState<boolean>(false);
 
   const fetchEmergencyCard = async () => {
     try {
@@ -62,6 +66,16 @@ export const EmergencyCard: React.FC = () => {
       setAllergies(card.allergies || []);
       setContacts(card.emergencyContacts || []);
       setConditionsSummary(card.conditionsSummary || '');
+
+      // Fetch vector QR code (Feature 21)
+      try {
+        const qrRes = await api.get('/emergency/qr');
+        if (qrRes.data?.svg) {
+          setQrSvg(qrRes.data.svg);
+        }
+      } catch (qrErr) {
+        console.warn('QR code generation unavailable', qrErr);
+      }
     } catch (err: any) {
       console.error('Failed to load emergency card', err);
     } finally {
@@ -379,9 +393,22 @@ export const EmergencyCard: React.FC = () => {
                 <p className="text-[10px] text-teal-300 font-mono">MediChain-AI Encrypted Vault</p>
               </div>
             </div>
-            <div className="p-2 bg-navy-950/80 rounded-2xl border border-slate-700">
-              <QrCode className="w-10 h-10 text-slate-300" />
-            </div>
+            <button
+              type="button"
+              onClick={() => setQrModalOpen(true)}
+              className="p-2 bg-navy-950/80 hover:bg-teal-950/80 rounded-2xl border border-slate-700 hover:border-teal-500/50 transition-colors cursor-pointer group flex flex-col items-center gap-1"
+              title="Click to view full emergency QR Code"
+            >
+              {qrSvg ? (
+                <div
+                  className="w-12 h-12 [&>svg]:w-full [&>svg]:h-full"
+                  dangerouslySetInnerHTML={{ __html: qrSvg }}
+                />
+              ) : (
+                <QrCode className="w-10 h-10 text-slate-300 group-hover:text-teal-400" />
+              )}
+              <span className="text-[9px] text-teal-400 font-mono">View QR</span>
+            </button>
           </div>
 
           <div className="space-y-4">
@@ -488,6 +515,56 @@ export const EmergencyCard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Feature 21: Emergency QR Code Modal */}
+      <Modal
+        isOpen={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        title="Emergency Responder QR Code (Feature 21)"
+        maxWidth="max-w-md"
+      >
+        <div className="flex flex-col items-center justify-center p-4 space-y-4 text-center">
+          <p className="text-xs text-slate-300">
+            Emergency medical personnel can scan this SVG QR code to immediately view triage-safe emergency details.
+          </p>
+
+          {qrSvg ? (
+            <div
+              className="p-4 bg-white rounded-2xl shadow-xl w-64 h-64 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full"
+              dangerouslySetInnerHTML={{ __html: qrSvg }}
+            />
+          ) : (
+            <div className="w-64 h-64 bg-navy-950 rounded-2xl flex items-center justify-center text-slate-500 text-xs">
+              Generating SVG QR code...
+            </div>
+          )}
+
+          <div className="pt-2 flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                const blob = new Blob([qrSvg || ''], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `emergency-qr-${user?.email || 'patient'}.svg`;
+                a.click();
+              }}
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Download SVG
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold cursor-pointer"
+            >
+              Print Card
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

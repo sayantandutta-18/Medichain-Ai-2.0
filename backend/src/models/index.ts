@@ -14,3 +14,5 @@ export * from './SecurityEvent.js';
 export * from './HealthMetric.js';
 export * from './ClinicalNote.js';
 export * from './HealthGoal.js';
+export * from './WebhookSubscription.js';
+export * from './UserSession.js';

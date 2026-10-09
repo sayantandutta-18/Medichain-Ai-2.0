@@ -31,6 +31,8 @@ import {
   Check,
   Database,
   Key,
+  Globe,
+  FileDown,
 } from 'lucide-react';
 
 export const RecordsList: React.FC = () => {
@@ -97,6 +99,17 @@ export const RecordsList: React.FC = () => {
   const [proofCommitLoading, setProofCommitLoading] = useState<boolean>(false);
   const [verifyProofCommitment, setVerifyProofCommitment] = useState<string>('');
   const [verifyProofStatus, setVerifyProofStatus] = useState<string | null>(null);
+
+  // Feature 22: Multilingual Translation State
+  const [translateModalRecord, setTranslateModalRecord] = useState<MedicalRecord | null>(null);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('Spanish');
+  const [translationResult, setTranslationResult] = useState<any | null>(null);
+  const [translationLoading, setTranslationLoading] = useState<boolean>(false);
+  const [translationError, setTranslationError] = useState<string | null>(null);
+
+  // Feature 25: Health Dossier Export State
+  const [exportingDossier, setExportingDossier] = useState<boolean>(false);
+  const [dossierChecksum, setDossierChecksum] = useState<string | null>(null);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -179,6 +192,52 @@ export const RecordsList: React.FC = () => {
       );
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const handleOpenTranslate = (record: MedicalRecord) => {
+    setTranslateModalRecord(record);
+    setTranslationResult(null);
+    setTranslationError(null);
+  };
+
+  const handleRunTranslate = async (lang?: string) => {
+    if (!translateModalRecord) return;
+    const targetLanguage = lang || selectedLanguage;
+    setTranslationLoading(true);
+    setTranslationError(null);
+    setTranslationResult(null);
+    try {
+      const res = await apiClient.post(`/ai/records/${translateModalRecord._id}/translate`, {
+        targetLanguage,
+      });
+      setTranslationResult(res.data.translation);
+    } catch (err: any) {
+      setTranslationError(
+        err.response?.data?.message || 'AI translation failed or service is unavailable.'
+      );
+    } finally {
+      setTranslationLoading(false);
+    }
+  };
+
+  const handleExportDossier = async () => {
+    try {
+      setExportingDossier(true);
+      const res = await apiClient.get('/export/health-summary');
+      const { dossier, integrityHash } = res.data;
+      setDossierChecksum(integrityHash);
+
+      const blob = new Blob([JSON.stringify(dossier, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `medichain-health-dossier-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to export health dossier');
+    } finally {
+      setExportingDossier(false);
     }
   };
 
@@ -410,6 +469,15 @@ export const RecordsList: React.FC = () => {
             ZK Proofs
           </button>
           <button
+            onClick={handleExportDossier}
+            disabled={exportingDossier}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-navy-900 hover:bg-slate-800 text-teal-300 border border-teal-500/30 rounded-xl text-xs font-semibold transition-all shadow-md cursor-pointer disabled:opacity-50"
+            title="Download complete encrypted dossier with SHA-256 integrity hash (Feature 25)"
+          >
+            <FileDown className="w-3.5 h-3.5 text-teal-400" />
+            {exportingDossier ? 'Exporting...' : 'Export Dossier'}
+          </button>
+          <button
             onClick={() => {
               setCompareModalOpen(true);
               setCompareResult(null);
@@ -429,6 +497,18 @@ export const RecordsList: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {dossierChecksum && (
+        <div className="p-3 bg-teal-950/40 border border-teal-500/40 rounded-xl text-xs text-teal-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-teal-400 shrink-0" />
+            <span>
+              <strong>Dossier Exported:</strong> SHA-256 Checksum: <code className="font-mono text-teal-300">{dossierChecksum}</code>
+            </span>
+          </div>
+          <button onClick={() => setDossierChecksum(null)} className="text-slate-400 hover:text-white text-xs">✕</button>
+        </div>
+      )}
 
       {/* Filters and Search Bar */}
       <div className="bg-navy-900 p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row items-center gap-3">
@@ -597,6 +677,16 @@ export const RecordsList: React.FC = () => {
                   >
                     <GitBranch className="w-3.5 h-3.5 text-indigo-400" />
                     v{record.currentVersion || 1} History
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1">
+                  <button
+                    onClick={() => handleOpenTranslate(record)}
+                    className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-indigo-950/30 hover:bg-indigo-900/40 text-indigo-300 border border-indigo-700/30 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <Globe className="w-3.5 h-3.5 text-indigo-400" />
+                    Translate (AI)
                   </button>
                 </div>
               </div>
@@ -1234,6 +1324,109 @@ export const RecordsList: React.FC = () => {
               </div>
             )}
           </form>
+        </div>
+      </Modal>
+
+      {/* Feature 22: AI Multilingual Translation Modal */}
+      <Modal
+        isOpen={!!translateModalRecord}
+        onClose={() => setTranslateModalRecord(null)}
+        title="AI Multilingual Medical Record Translation (Feature 22)"
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="p-3 bg-amber-950/40 border border-amber-600/30 rounded-xl text-amber-200 text-xs flex items-start gap-2.5">
+            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span>
+              <strong>Medical Notice:</strong> AI translation is strictly an informational accessibility aid and not a certified clinical translation.
+            </span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-navy-950 p-4 rounded-xl border border-slate-800">
+            <div className="flex items-center gap-2">
+              <label className="text-slate-300 font-semibold">Target Language:</label>
+              <select
+                value={selectedLanguage}
+                onChange={(e) => setSelectedLanguage(e.target.value)}
+                className="bg-navy-900 border border-slate-700 text-white rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-indigo-500"
+              >
+                <option value="Spanish">Spanish (Español)</option>
+                <option value="French">French (Français)</option>
+                <option value="German">German (Deutsch)</option>
+                <option value="Hindi">Hindi (हिन्दी)</option>
+                <option value="Mandarin">Mandarin (中文)</option>
+                <option value="Japanese">Japanese (日本語)</option>
+                <option value="Arabic">Arabic (العربية)</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleRunTranslate()}
+              disabled={translationLoading}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>{translationLoading ? 'Translating...' : 'Translate Report'}</span>
+            </button>
+          </div>
+
+          {translationError && (
+            <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-xl text-xs text-red-300">
+              {translationError}
+            </div>
+          )}
+
+          {translationResult && (
+            <div className="space-y-3 pt-2 border-t border-slate-800">
+              <div className="bg-navy-950 p-3.5 rounded-xl border border-slate-800">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">
+                  Translated Title ({translationResult.targetLanguage})
+                </span>
+                <p className="text-sm font-bold text-white">{translationResult.translatedTitle}</p>
+              </div>
+
+              <div className="bg-navy-950 p-3.5 rounded-xl border border-slate-800">
+                <span className="text-[10px] text-teal-400 uppercase font-bold block mb-1">
+                  Translated Summary
+                </span>
+                <p className="text-slate-200 leading-relaxed">{translationResult.translatedSummary}</p>
+              </div>
+
+              {translationResult.translatedFindings && translationResult.translatedFindings.length > 0 && (
+                <div className="bg-navy-950 p-3.5 rounded-xl border border-slate-800 space-y-1.5">
+                  <span className="text-[10px] text-teal-400 uppercase font-bold block">
+                    Key Clinical Findings
+                  </span>
+                  <ul className="list-disc list-inside space-y-1 text-slate-300">
+                    {translationResult.translatedFindings.map((finding: string, i: number) => (
+                      <li key={i}>{finding}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {translationResult.translatedTerminology && translationResult.translatedTerminology.length > 0 && (
+                <div className="bg-navy-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                  <span className="text-[10px] text-teal-400 uppercase font-bold block">
+                    Medical Terminology Glossary
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {translationResult.translatedTerminology.map((item: any, i: number) => (
+                      <div key={i} className="p-2 bg-navy-900 rounded-lg border border-slate-800/80">
+                        <span className="text-teal-300 font-semibold block">{item.term}</span>
+                        <span className="text-slate-300">{item.translation}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[10px] text-slate-500 italic text-center pt-2">
+                {translationResult.disclaimer}
+              </p>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { createHash, randomBytes } from 'crypto';
+import { createHash, randomBytes, randomUUID } from 'crypto';
 import { env } from '../config/env.js';
 import { User, UserDocument, UserRole } from '../models/User.js';
+import { UserSession } from '../models/UserSession.js';
 import { RegisterInput, LoginInput } from '../validators/auth.validator.js';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -109,7 +110,10 @@ export class AuthService {
     };
   }
 
-  public static async login(input: LoginInput): Promise<{ user: AuthUserResponse; tokens: AuthTokens }> {
+  public static async login(
+    input: LoginInput,
+    clientInfo?: { userAgent?: string; ip?: string }
+  ): Promise<{ user: AuthUserResponse; tokens: AuthTokens; sessionId?: string }> {
     const user = await User.findOne({ email: input.email });
     if (!user) {
       // Generic error message prevents account enumeration
@@ -128,6 +132,29 @@ export class AuthService {
     const refreshToken = this.generateRefreshToken();
     user.refreshTokenHash = this.hashToken(refreshToken);
     await user.save();
+
+    // Register active user session for multi-device management (Feature 26)
+    const sessionId = randomUUID();
+    const ua = clientInfo?.userAgent || 'Unknown Device';
+    const isMobile = /mobile|iphone|android|ipad/i.test(ua);
+    const isTablet = /tablet|ipad/i.test(ua);
+    const deviceType: 'Desktop' | 'Mobile' | 'Tablet' | 'Unknown' = isTablet
+      ? 'Tablet'
+      : isMobile
+      ? 'Mobile'
+      : 'Desktop';
+
+    await UserSession.create({
+      userId: user._id,
+      sessionId,
+      refreshTokenHash: user.refreshTokenHash,
+      userAgent: ua.slice(0, 150),
+      deviceType,
+      ip: clientInfo?.ip || '127.0.0.1',
+      lastActive: now,
+      revoked: false,
+      schemaVersion: 1,
+    });
 
     const accessToken = this.generateAccessToken({
       userId: user._id.toString(),
@@ -148,11 +175,19 @@ export class AuthService {
         accessToken,
         refreshToken,
       },
+      sessionId,
     };
   }
 
   public static async refreshTokens(rawRefreshToken: string): Promise<AuthTokens> {
     const hashed = this.hashToken(rawRefreshToken);
+
+    // If an associated user session was remotely revoked, block token renewal (Feature 26)
+    const existingSession = await UserSession.findOne({ refreshTokenHash: hashed });
+    if (existingSession && existingSession.revoked) {
+      throw new AppError('Session has been revoked remotely. Please log in again.', 401);
+    }
+
     const user = await User.findOne({ refreshTokenHash: hashed });
 
     if (!user) {
@@ -161,8 +196,15 @@ export class AuthService {
 
     // Refresh token rotation: issue brand new refresh token and invalidate old one
     const newRefreshToken = this.generateRefreshToken();
-    user.refreshTokenHash = this.hashToken(newRefreshToken);
+    const newHash = this.hashToken(newRefreshToken);
+    user.refreshTokenHash = newHash;
     await user.save();
+
+    if (existingSession) {
+      existingSession.refreshTokenHash = newHash;
+      existingSession.lastActive = new Date();
+      await existingSession.save();
+    }
 
     const newAccessToken = this.generateAccessToken({
       userId: user._id.toString(),
@@ -178,6 +220,7 @@ export class AuthService {
 
   public static async logout(userId: string): Promise<void> {
     await User.findByIdAndUpdate(userId, { refreshTokenHash: null });
+    await UserSession.updateMany({ userId }, { revoked: true });
   }
 
   public static async getProfile(userId: string): Promise<AuthUserResponse> {

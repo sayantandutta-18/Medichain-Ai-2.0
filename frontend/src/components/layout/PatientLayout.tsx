@@ -19,12 +19,16 @@ import {
   Activity,
   Layers,
   Target,
+  Mic,
+  KeyRound,
 } from 'lucide-react';
 import { NotificationBell } from '../common/NotificationBell.js';
+import { VoiceAssistantModal } from '../common/VoiceAssistantModal.js';
 
 export const PatientLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [voiceAssistantOpen, setVoiceAssistantOpen] = useState(false);
 
   const navLinks = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -40,6 +44,7 @@ export const PatientLayout: React.FC = () => {
     { to: '/emergency', label: 'Emergency Card', icon: CreditCard },
     { to: '/appointments', label: 'Appointments', icon: Calendar },
     { to: '/medications', label: 'Medications', icon: Pill },
+    { to: '/security', label: 'Security & Webhooks', icon: KeyRound },
   ];
 
   const handleLinkClick = () => {
@@ -171,7 +176,16 @@ export const PatientLayout: React.FC = () => {
               <strong>Portfolio MVP:</strong> Patient-controlled medical records MVP. Not a medical device or diagnostic platform.
             </span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setVoiceAssistantOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-sm"
+              title="Open AI Voice Assistant (Preview & Safe Confirmation)"
+            >
+              <Mic className="w-3.5 h-3.5 text-teal-400" />
+              <span className="hidden sm:inline">Voice Assistant</span>
+            </button>
             <NotificationBell />
           </div>
         </div>
@@ -180,6 +194,12 @@ export const PatientLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Voice AI Assistant Modal */}
+      <VoiceAssistantModal
+        isOpen={voiceAssistantOpen}
+        onClose={() => setVoiceAssistantOpen(false)}
+      />
     </div>
   );
 };

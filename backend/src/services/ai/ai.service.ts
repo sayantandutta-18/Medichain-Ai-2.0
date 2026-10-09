@@ -9,9 +9,13 @@ import {
   EXPLAIN_SYSTEM_PROMPT,
   COMPARE_SYSTEM_PROMPT,
   TIMELINE_SYSTEM_PROMPT,
+  TRANSLATE_SYSTEM_PROMPT,
+  VOICE_SYSTEM_PROMPT,
   buildExplanationUserPrompt,
   buildComparisonUserPrompt,
   buildTimelineUserPrompt,
+  buildTranslationUserPrompt,
+  buildVoiceUserPrompt,
   redactDirectIdentifiers,
 } from './prompts/explain.js';
 
@@ -52,6 +56,37 @@ export const aiTimelineSchema = z.object({
     })
   ),
   summary: z.string().min(1),
+  disclaimer: z.string().min(1),
+});
+
+export const aiTranslationSchema = z.object({
+  targetLanguage: z.string().min(1),
+  translatedTitle: z.string().min(1),
+  translatedSummary: z.string().min(1),
+  translatedFindings: z.array(z.string()).default([]),
+  translatedTerminology: z
+    .array(
+      z.object({
+        term: z.string().min(1),
+        translation: z.string().min(1),
+      })
+    )
+    .default([]),
+  disclaimer: z.string().min(1),
+});
+
+export const aiVoiceIntentSchema = z.object({
+  intent: z.enum([
+    'SCHEDULE_APPOINTMENT',
+    'LOG_VITAL',
+    'SEARCH_RECORDS',
+    'VIEW_MEDICATIONS',
+    'CHECK_INTERACTIONS',
+    'UNKNOWN',
+  ]),
+  naturalLanguageSummary: z.string().min(1),
+  requiresConfirmation: z.boolean(),
+  previewData: z.record(z.any()).default({}),
   disclaimer: z.string().min(1),
 });
 
@@ -367,6 +402,175 @@ export class AiService {
     return {
       status: 'SUCCESS',
       timeline: validationResult.data,
+      disclaimer: validationResult.data.disclaimer,
+    };
+  }
+
+  public static async translateRecord(
+    recordId: string,
+    targetLanguage: string,
+    actor: PolicyActor,
+    requestId: string = 'unknown',
+    customProvider?: LlmProviderFn
+  ): Promise<any> {
+    const record = await MedicalRecord.findOne({ _id: recordId, deletedAt: null });
+    if (!record) {
+      throw new AppError('Medical record not found', 404);
+    }
+
+    const allowed = await can(actor, 'record:read', {
+      recordPatientId: record.patientId.toString(),
+    });
+    if (!allowed) {
+      throw new AppError('Unauthorized: Access denied to record for translation', 403);
+    }
+
+    const aad = `${record._id.toString()}|${record.patientId.toString()}`;
+    let documentText = '';
+    try {
+      const decryptedBytes = decrypt(record.encryptedPayload, aad);
+      documentText = decryptedBytes.toString('utf-8');
+    } catch {
+      throw new AppError('Decryption failed while preparing record for translation', 500);
+    }
+
+    const redactedText = redactDirectIdentifiers(documentText);
+    const userPrompt = buildTranslationUserPrompt(redactedText, targetLanguage);
+
+    let rawOutput = '';
+    try {
+      if (customProvider) {
+        rawOutput = await customProvider(TRANSLATE_SYSTEM_PROMPT, userPrompt);
+      } else {
+        rawOutput = await this.callOpenAi(TRANSLATE_SYSTEM_PROMPT, userPrompt);
+      }
+    } catch (err: any) {
+      if (err.statusCode === 503 || err.status === 503 || err.code === 'AI_UNAVAILABLE') {
+        return {
+          status: 'AI_UNAVAILABLE',
+          message: 'AI service unavailable: OPENAI_API_KEY is not configured',
+          disclaimer: this.defaultDisclaimer,
+        };
+      }
+      throw err;
+    }
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawOutput);
+    } catch {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not generate translation: invalid JSON output from model',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    const validationResult = aiTranslationSchema.safeParse(parsed);
+    if (!validationResult.success) {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not generate translation: schema validation failed',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    await AuditService.record({
+      actorId: actor.userId,
+      role: actor.role,
+      action: 'RECORD_READ',
+      targetId: record._id.toString(),
+      requestId,
+      metadata: { action: 'AI_TRANSLATION', targetLanguage },
+    });
+
+    return {
+      status: 'SUCCESS',
+      translation: validationResult.data,
+      disclaimer: validationResult.data.disclaimer,
+    };
+  }
+
+  public static async parseVoiceIntent(
+    voiceTranscript: string,
+    actor: PolicyActor,
+    requestId: string = 'unknown',
+    customProvider?: LlmProviderFn
+  ): Promise<any> {
+    const userPrompt = buildVoiceUserPrompt(voiceTranscript);
+
+    let rawOutput = '';
+    try {
+      if (customProvider) {
+        rawOutput = await customProvider(VOICE_SYSTEM_PROMPT, userPrompt);
+      } else {
+        rawOutput = await this.callOpenAi(VOICE_SYSTEM_PROMPT, userPrompt);
+      }
+    } catch (err: any) {
+      if (err.statusCode === 503 || err.status === 503 || err.code === 'AI_UNAVAILABLE') {
+        const lower = voiceTranscript.toLowerCase();
+        let intent: 'SCHEDULE_APPOINTMENT' | 'LOG_VITAL' | 'SEARCH_RECORDS' | 'VIEW_MEDICATIONS' | 'CHECK_INTERACTIONS' | 'UNKNOWN' = 'UNKNOWN';
+        let requiresConfirmation = false;
+        let previewData: any = {};
+        let summary = 'Voice command processed.';
+
+        if (lower.includes('appoint') || lower.includes('doctor') || lower.includes('consult')) {
+          intent = 'SCHEDULE_APPOINTMENT';
+          requiresConfirmation = true;
+          previewData = { reason: voiceTranscript };
+          summary = 'Schedule appointment consultation';
+        } else if (lower.includes('blood pressure') || lower.includes('heart rate') || lower.includes('glucose') || lower.includes('weight')) {
+          intent = 'LOG_VITAL';
+          requiresConfirmation = true;
+          previewData = { transcript: voiceTranscript };
+          summary = 'Record health vital';
+        } else if (lower.includes('medication') || lower.includes('prescription')) {
+          intent = 'VIEW_MEDICATIONS';
+          requiresConfirmation = false;
+          summary = 'View active medications';
+        } else if (lower.includes('record') || lower.includes('lab') || lower.includes('report')) {
+          intent = 'SEARCH_RECORDS';
+          requiresConfirmation = false;
+          summary = 'Search medical records';
+        }
+
+        return {
+          status: 'SUCCESS',
+          intent: {
+            intent,
+            naturalLanguageSummary: summary,
+            requiresConfirmation,
+            previewData,
+            disclaimer: 'Voice assistant preview. Actions modifying data require explicit confirmation.',
+          },
+        };
+      }
+      throw err;
+    }
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(rawOutput);
+    } catch {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not parse voice intent: invalid JSON output from model',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    const validationResult = aiVoiceIntentSchema.safeParse(parsed);
+    if (!validationResult.success) {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not parse voice intent: schema validation failed',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    return {
+      status: 'SUCCESS',
+      intent: validationResult.data,
       disclaimer: validationResult.data.disclaimer,
     };
   }

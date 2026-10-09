@@ -26,6 +26,9 @@ import { proofRouter } from './routes/proof.js';
 import { prescriptionRouter } from './routes/prescription.js';
 import { goalRouter } from './routes/goal.js';
 import { appointmentRouter } from './routes/appointment.js';
+import { webhookRouter } from './routes/webhook.js';
+import { exportRouter } from './routes/export.js';
+import { sessionRouter } from './routes/session.js';
 
 export function createApp(): Express {
   const app = express();
@@ -75,6 +78,9 @@ export function createApp(): Express {
   app.use('/api/v1', prescriptionRouter);
   app.use('/api/v1', goalRouter);
   app.use('/api/v1', appointmentRouter);
+  app.use('/api/v1', webhookRouter);
+  app.use('/api/v1', exportRouter);
+  app.use('/api/v1', sessionRouter);
 
   // 404 handler for unknown routes
   app.use(notFoundHandler);

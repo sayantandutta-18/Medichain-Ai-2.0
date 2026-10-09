@@ -12,3 +12,7 @@ emergencyRouter.post('/emergency/card', requireAuth, EmergencyController.updateP
 // Unauthenticated public route for emergency first-responders (strictly minimal allow-listed fields)
 emergencyRouter.get('/emergency/view/:patientId', EmergencyController.getPublicEmergencyCard);
 emergencyRouter.get('/emergency/public/:token', EmergencyController.getPublicEmergencyCard);
+
+// Emergency QR Code endpoints (Feature 21)
+emergencyRouter.get('/emergency/qr', requireAuth, EmergencyController.getEmergencyQrCode);
+emergencyRouter.get('/emergency/:token/qr', EmergencyController.getEmergencyQrCode);

@@ -27,6 +27,8 @@ const updateEmergencyProfileSchema = z.object({
   conditionsSummary: z.string().max(500).optional(),
 });
 
+import { generateQrSvg } from '../utils/qr.js';
+
 export class EmergencyController {
   public static async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -103,6 +105,29 @@ export class EmergencyController {
       res.status(200).json({
         emergencyCard: allowListedEmergencyData,
         data: allowListedEmergencyData,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async getEmergencyQrCode(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const identifier = req.params.patientId || req.params.token || req.user?.userId;
+      if (!identifier) {
+        throw new AppError('Emergency identifier required', 400);
+      }
+
+      const emergencyUrl = `/emergency/${identifier}`;
+      const svg = generateQrSvg(emergencyUrl, 300);
+      const asDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+
+      res.status(200).json({
+        status: 'SUCCESS',
+        identifier,
+        emergencyUrl,
+        svg,
+        dataUrl: asDataUrl,
       });
     } catch (err) {
       next(err);
