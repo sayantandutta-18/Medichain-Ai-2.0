@@ -16,9 +16,12 @@ const upload = multer({
 
 recordRouter.post('/records', requireAuth, upload.single('file'), RecordController.upload);
 recordRouter.get('/records', requireAuth, RecordController.list);
+recordRouter.get('/records/timeline', requireAuth, RecordController.getTimeline);
 recordRouter.get('/records/:id', requireAuth, RecordController.getById);
 recordRouter.get('/records/:id/download', requireAuth, RecordController.download);
 recordRouter.patch('/records/:id', requireAuth, RecordController.updateMetadata);
 recordRouter.delete('/records/:id', requireAuth, RecordController.deleteRecord);
 recordRouter.post('/records/:id/anchor', requireAuth, RecordController.anchor);
 recordRouter.get('/records/:id/verify', requireAuth, RecordController.verify);
+recordRouter.post('/records/:id/versions', requireAuth, upload.single('file'), RecordController.createVersion);
+recordRouter.get('/records/:id/versions', requireAuth, RecordController.listVersions);

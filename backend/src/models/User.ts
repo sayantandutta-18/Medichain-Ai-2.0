@@ -9,6 +9,10 @@ export interface IUser {
   firstName?: string;
   lastName?: string;
   lastLoginAt?: Date;
+  licenseNumber?: string;
+  verificationStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  verifiedAt?: Date;
+  verifiedBy?: Types.ObjectId;
   refreshTokenHash?: string | null;
   schemaVersion: number;
   createdAt?: Date;
@@ -46,6 +50,22 @@ const userSchema = new Schema<UserDocument>(
     },
     lastLoginAt: {
       type: Date,
+    },
+    licenseNumber: {
+      type: String,
+      trim: true,
+    },
+    verificationStatus: {
+      type: String,
+      enum: ['PENDING', 'VERIFIED', 'REJECTED'],
+      default: 'PENDING',
+    },
+    verifiedAt: {
+      type: Date,
+    },
+    verifiedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
     },
     refreshTokenHash: {
       type: String,

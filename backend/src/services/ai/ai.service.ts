@@ -7,7 +7,11 @@ import { AuditService } from '../audit.service.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import {
   EXPLAIN_SYSTEM_PROMPT,
+  COMPARE_SYSTEM_PROMPT,
+  TIMELINE_SYSTEM_PROMPT,
   buildExplanationUserPrompt,
+  buildComparisonUserPrompt,
+  buildTimelineUserPrompt,
   redactDirectIdentifiers,
 } from './prompts/explain.js';
 
@@ -25,6 +29,30 @@ export const aiExplanationSchema = z.object({
     .default([]),
   questionsForClinician: z.array(z.string()).default([]),
   disclaimer: z.string().min(1, 'Disclaimer is required'),
+});
+
+export const aiComparisonSchema = z.object({
+  differences: z.array(
+    z.object({
+      field: z.string().min(1),
+      status: z.enum(['changed', 'new', 'missing']),
+      detail: z.string().min(1),
+    })
+  ),
+  summary: z.string().min(1),
+  disclaimer: z.string().min(1),
+});
+
+export const aiTimelineSchema = z.object({
+  chronology: z.array(
+    z.object({
+      dateOrPeriod: z.string().min(1),
+      eventTitle: z.string().min(1),
+      findingsOverview: z.string().min(1),
+    })
+  ),
+  summary: z.string().min(1),
+  disclaimer: z.string().min(1),
 });
 
 export type AiExplanation = z.infer<typeof aiExplanationSchema>;
@@ -185,6 +213,160 @@ export class AiService {
     return {
       status: 'SUCCESS',
       explanation: validationResult.data,
+      disclaimer: validationResult.data.disclaimer,
+    };
+  }
+
+  public static async compareRecords(
+    recordIdA: string,
+    recordIdB: string,
+    actor: PolicyActor,
+    requestId: string = 'internal',
+    customProvider?: LlmProviderFn
+  ): Promise<any> {
+    const [recA, recB] = await Promise.all([
+      MedicalRecord.findOne({ _id: recordIdA, deletedAt: null }),
+      MedicalRecord.findOne({ _id: recordIdB, deletedAt: null }),
+    ]);
+
+    if (!recA || !recB) {
+      throw new AppError('One or both records not found for comparison', 404);
+    }
+
+    const [canA, canB] = await Promise.all([
+      can(actor, 'record:read', { recordPatientId: recA.patientId.toString() }),
+      can(actor, 'record:read', { recordPatientId: recB.patientId.toString() }),
+    ]);
+
+    if (!canA || !canB) {
+      throw new AppError('Unauthorized: Access denied to compare records', 403);
+    }
+
+    const aadA = `${recA._id.toString()}|${recA.patientId.toString()}`;
+    const aadB = `${recB._id.toString()}|${recB.patientId.toString()}`;
+    const textA = redactDirectIdentifiers(decrypt(recA.encryptedPayload, aadA).toString('utf-8'));
+    const textB = redactDirectIdentifiers(decrypt(recB.encryptedPayload, aadB).toString('utf-8'));
+
+    const userPrompt = buildComparisonUserPrompt(textA, textB);
+
+    let rawOutput = '';
+    if (customProvider) {
+      rawOutput = await customProvider(COMPARE_SYSTEM_PROMPT, userPrompt);
+    } else {
+      rawOutput = await this.callOpenAi(COMPARE_SYSTEM_PROMPT, userPrompt);
+    }
+
+    let parsedJson: any;
+    try {
+      parsedJson = JSON.parse(rawOutput);
+    } catch {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not generate comparison: invalid JSON',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    const validationResult = aiComparisonSchema.safeParse(parsedJson);
+    if (!validationResult.success) {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not generate comparison: schema validation failed',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    await AuditService.record({
+      actorId: actor.userId,
+      role: actor.role,
+      action: 'AI_RECORD_COMPARISON',
+      targetId: `${recordIdA},${recordIdB}`,
+      requestId,
+      metadata: { model: env.OPENAI_MODEL || 'gpt-4o-mini' },
+    });
+
+    return {
+      status: 'SUCCESS',
+      comparison: validationResult.data,
+      disclaimer: validationResult.data.disclaimer,
+    };
+  }
+
+  public static async explainTimeline(
+    targetPatientId: string,
+    actor: PolicyActor,
+    requestId: string = 'internal',
+    customProvider?: LlmProviderFn
+  ): Promise<any> {
+    const allowed = await can(actor, 'record:read', { recordPatientId: targetPatientId });
+    if (!allowed) {
+      throw new AppError('Unauthorized: Access denied to patient timeline', 403);
+    }
+
+    const records = await MedicalRecord.find({ patientId: targetPatientId, deletedAt: null })
+      .sort({ createdAt: 1 })
+      .limit(10);
+
+    if (records.length === 0) {
+      return {
+        status: 'SUCCESS',
+        timeline: {
+          chronology: [],
+          summary: 'No records available to summarize',
+          disclaimer: this.defaultDisclaimer,
+        },
+      };
+    }
+
+    const texts: string[] = [];
+    for (const rec of records) {
+      const aad = `${rec._id.toString()}|${rec.patientId.toString()}`;
+      const dec = decrypt(rec.encryptedPayload, aad).toString('utf-8');
+      const red = redactDirectIdentifiers(dec);
+      texts.push(`Date: ${rec.createdAt?.toISOString().split('T')[0]} | Title: ${rec.title}\n${red}`);
+    }
+
+    const userPrompt = buildTimelineUserPrompt(texts.join('\n---\n'));
+
+    let rawOutput = '';
+    if (customProvider) {
+      rawOutput = await customProvider(TIMELINE_SYSTEM_PROMPT, userPrompt);
+    } else {
+      rawOutput = await this.callOpenAi(TIMELINE_SYSTEM_PROMPT, userPrompt);
+    }
+
+    let parsedJson: any;
+    try {
+      parsedJson = JSON.parse(rawOutput);
+    } catch {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not generate timeline: invalid JSON',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    const validationResult = aiTimelineSchema.safeParse(parsedJson);
+    if (!validationResult.success) {
+      return {
+        status: 'COULD_NOT_GENERATE',
+        message: 'Could not generate timeline: schema validation failed',
+        disclaimer: this.defaultDisclaimer,
+      };
+    }
+
+    await AuditService.record({
+      actorId: actor.userId,
+      role: actor.role,
+      action: 'AI_TIMELINE_ANALYSIS',
+      targetId: targetPatientId,
+      requestId,
+      metadata: { model: env.OPENAI_MODEL || 'gpt-4o-mini' },
+    });
+
+    return {
+      status: 'SUCCESS',
+      timeline: validationResult.data,
       disclaimer: validationResult.data.disclaimer,
     };
   }

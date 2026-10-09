@@ -41,6 +41,15 @@ export interface MedicalRecord {
     notes?: string;
     tags?: string[];
   };
+  currentVersion?: number;
+  versions?: Array<{
+    versionNumber: number;
+    sha256: string;
+    originalFilename?: string;
+    sizeBytes?: number;
+    changeNote?: string;
+    createdAt: string;
+  }>;
   createdAt: string;
   updatedAt: string;
 }

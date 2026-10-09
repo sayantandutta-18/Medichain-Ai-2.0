@@ -8,6 +8,8 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
+export const api = apiClient;
+
 export function setApiAuthToken(token: string | null): void {
   memoryToken = token;
 }

@@ -2,8 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
 import { Types } from 'mongoose';
 import { AccessRequest } from '../models/AccessRequest.js';
+import { User } from '../models/User.js';
 import { can } from '../policy/policy.js';
 import { AuditService } from '../services/audit.service.js';
+import { NotificationService } from '../services/notification.service.js';
 import { createAccessRequestSchema, approveAccessRequestSchema } from '../validators/access.validator.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { sha256 } from '../utils/hash.js';
@@ -39,6 +41,12 @@ export class AccessController {
         throw new AppError('An active or pending access request already exists', 409);
       }
 
+      // Check doctor verification status (Feature 01: PENDING/VERIFIED/REJECTED enforced server-side)
+      const doctorUser = await User.findById(doctorId);
+      if (doctorUser && doctorUser.verificationStatus === 'REJECTED') {
+        throw new AppError('Forbidden: Practitioner verification is rejected. Access requests prohibited.', 403);
+      }
+
       // Default temporary expiry for pending review: 7 days
       const pendingExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
@@ -61,6 +69,15 @@ export class AccessController {
         requestId: req.requestId || 'unknown',
         ip: req.ip,
         metadata: { patientId: validated.patientId, purpose: validated.purpose },
+      });
+
+      // Event-driven notification to patient (Feature 02)
+      await NotificationService.notify({
+        userId: validated.patientId,
+        type: 'ACCESS_REQUEST',
+        title: 'New Clinical Access Request',
+        message: `Practitioner requested record access: ${validated.purpose}`,
+        metadata: { requestId: requestDoc._id.toString() },
       });
 
       res.status(201).json({
@@ -160,6 +177,15 @@ export class AccessController {
         metadata: { doctorId: requestDoc.doctorId.toString(), scope: validated.scope },
       });
 
+      // Event-driven notification to doctor (Feature 02)
+      await NotificationService.notify({
+        userId: requestDoc.doctorId,
+        type: 'ACCESS_APPROVED',
+        title: 'Consent Granted',
+        message: `Patient approved your access request for: ${requestDoc.purpose}`,
+        metadata: { requestId: requestDoc._id.toString() },
+      });
+
       res.status(200).json({
         message: 'Access request approved',
         accessRequest: requestDoc,
@@ -249,6 +275,15 @@ export class AccessController {
         targetId: requestDoc._id.toString(),
         requestId: req.requestId || 'unknown',
         ip: req.ip,
+      });
+
+      // Event-driven notification to doctor (Feature 02)
+      await NotificationService.notify({
+        userId: requestDoc.doctorId,
+        type: 'ACCESS_REVOKED',
+        title: 'Consent Revoked',
+        message: `Patient has revoked record access for request: ${requestDoc._id.toString()}`,
+        metadata: { requestId: requestDoc._id.toString() },
       });
 
       res.status(200).json({

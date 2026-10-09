@@ -15,16 +15,21 @@ describe('Checkpoint 12 - Doctor Dashboard & Consent-Aware UI', () => {
 
   describe('Doctor Verification Status Banner', () => {
     it('displays PENDING verification status banner when doctor is unverified', async () => {
-      vi.spyOn(apiClient, 'get').mockResolvedValueOnce({
-        data: {
-          user: {
-            id: 'doc-1',
-            email: 'dr.pending@hospital.dev',
-            role: 'DOCTOR',
-            isVerified: false,
-            verificationStatus: 'PENDING',
+      vi.spyOn(apiClient, 'get').mockImplementation((url: string) => {
+        if (url.includes('/notifications')) {
+          return Promise.resolve({ data: { notifications: [], unreadCount: 0 } });
+        }
+        return Promise.resolve({
+          data: {
+            user: {
+              id: 'doc-1',
+              email: 'dr.pending@hospital.dev',
+              role: 'DOCTOR',
+              isVerified: false,
+              verificationStatus: 'PENDING',
+            },
           },
-        },
+        });
       });
 
       render(
@@ -41,16 +46,21 @@ describe('Checkpoint 12 - Doctor Dashboard & Consent-Aware UI', () => {
     });
 
     it('displays VERIFIED banner when doctor is fully verified', async () => {
-      vi.spyOn(apiClient, 'get').mockResolvedValueOnce({
-        data: {
-          user: {
-            id: 'doc-2',
-            email: 'dr.verified@hospital.dev',
-            role: 'DOCTOR',
-            isVerified: true,
-            verificationStatus: 'VERIFIED',
+      vi.spyOn(apiClient, 'get').mockImplementation((url: string) => {
+        if (url.includes('/notifications')) {
+          return Promise.resolve({ data: { notifications: [], unreadCount: 0 } });
+        }
+        return Promise.resolve({
+          data: {
+            user: {
+              id: 'doc-2',
+              email: 'dr.verified@hospital.dev',
+              role: 'DOCTOR',
+              isVerified: true,
+              verificationStatus: 'VERIFIED',
+            },
           },
-        },
+        });
       });
 
       render(

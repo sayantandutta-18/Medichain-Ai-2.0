@@ -64,3 +64,60 @@ Return ONLY a valid JSON object matching this schema:
   "disclaimer": "AI-generated educational explanation only. Not a medical diagnosis. Please review and verify with your qualified clinician."
 }`;
 }
+
+export const COMPARE_SYSTEM_PROMPT = `You are MediChain-AI document comparison assistant.
+Compare two medical reports and output a structured diff of clinical findings.
+Label differences as "changed", "new", or "missing".
+CRITICAL: Do NOT state any medical diagnosis, prognosis, or prescriptive advice.
+Return ONLY valid JSON matching the requested schema.`;
+
+export function buildComparisonUserPrompt(docA: string, docB: string): string {
+  return `Compare Report A with Report B:
+
+<REPORT_A>
+${docA}
+</REPORT_A>
+
+<REPORT_B>
+${docB}
+</REPORT_B>
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "differences": [
+    {
+      "field": "Test or metric name",
+      "status": "changed",
+      "detail": "Description of change between A and B"
+    }
+  ],
+  "summary": "Objective diff summary",
+  "disclaimer": "AI-generated document comparison for educational purposes only. Verify findings with your clinician."
+}`;
+}
+
+export const TIMELINE_SYSTEM_PROMPT = `You are MediChain-AI timeline assistant.
+Summarize a multi-report chronological health history in date ordering.
+CRITICAL: Do NOT state any medical diagnosis or prescriptive advice.
+Return ONLY valid JSON matching the requested schema.`;
+
+export function buildTimelineUserPrompt(chronologicalReports: string): string {
+  return `Summarize the following chronological reports:
+
+<REPORTS>
+${chronologicalReports}
+</REPORTS>
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "chronology": [
+    {
+      "dateOrPeriod": "Date or period",
+      "eventTitle": "Report or test name",
+      "findingsOverview": "Objective overview"
+    }
+  ],
+  "summary": "Overall chronological overview",
+  "disclaimer": "AI-generated health timeline for educational purposes only. Verify findings with your clinician."
+}`;
+}

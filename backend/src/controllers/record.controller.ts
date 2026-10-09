@@ -447,4 +447,204 @@ export class RecordController {
       next(err);
     }
   }
+
+  public static async getTimeline(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new AppError('Unauthorized', 401);
+
+      let targetPatientId = req.user.userId;
+      if (req.user.role === 'DOCTOR') {
+        const patientId = req.query.patientId as string;
+        if (!patientId) {
+          throw new AppError('Doctors must specify patientId to view timeline', 400);
+        }
+        targetPatientId = patientId;
+
+        const allowed = await can(
+          { userId: req.user.userId, role: req.user.role },
+          'record:read',
+          { recordPatientId: targetPatientId }
+        );
+        if (!allowed) {
+          throw new AppError('Unauthorized: Doctor has no active approved consent for this patient', 403);
+        }
+      }
+
+      const filter: any = { patientId: targetPatientId, deletedAt: null };
+      if (req.query.type && typeof req.query.type === 'string' && req.query.type !== 'ALL') {
+        filter.type = req.query.type;
+      }
+
+      const records = await MedicalRecord.find(filter)
+        .select('-encryptedPayload.ciphertext')
+        .sort({ createdAt: -1 });
+
+      const timelineByYear: Record<string, any[]> = {};
+      for (const rec of records) {
+        const year = (rec.createdAt ? new Date(rec.createdAt) : new Date()).getFullYear().toString();
+        if (!timelineByYear[year]) {
+          timelineByYear[year] = [];
+        }
+        timelineByYear[year].push(rec);
+      }
+
+      await AuditService.record({
+        actorId: req.user.userId,
+        role: req.user.role,
+        action: 'TIMELINE_VIEWED',
+        targetId: targetPatientId,
+        requestId: req.requestId || 'unknown',
+        ip: req.ip,
+      });
+
+      const timelineArray = Object.keys(timelineByYear)
+        .sort((a, b) => Number(b) - Number(a))
+        .map((year) => ({
+          year: Number(year),
+          records: timelineByYear[year],
+        }));
+
+      res.status(200).json({
+        timeline: timelineArray,
+        timelineByYear,
+        totalRecords: records.length,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async createVersion(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new AppError('Unauthorized', 401);
+
+      const record = await MedicalRecord.findOne({ _id: req.params.id, deletedAt: null });
+      if (!record) {
+        throw new AppError('Medical record not found', 404);
+      }
+
+      const allowed = await can(
+        { userId: req.user.userId, role: req.user.role },
+        'record:update',
+        { recordPatientId: record.patientId.toString() }
+      );
+      if (!allowed) {
+        throw new AppError('Only the record owner can upload new versions', 403);
+      }
+
+      if (!req.file) {
+        throw new AppError('No file uploaded for new version', 400);
+      }
+
+      const file = req.file;
+      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        throw new AppError(`Unsupported file type: ${file.mimetype}`, 400);
+      }
+
+      const isValidMagic = validateMagicBytes(file.buffer, file.mimetype);
+      if (!isValidMagic) {
+        throw new AppError('Magic bytes signature mismatch', 400);
+      }
+
+      const fileBytes = stripExifMetadata(file.buffer, file.mimetype);
+      const newHash = sha256(fileBytes);
+
+      const currentVerNum = record.currentVersion || 1;
+      const archivedVersion = {
+        versionNumber: currentVerNum,
+        sha256: record.sha256,
+        encryptedPayload: record.encryptedPayload,
+        originalFilename: record.originalFilename,
+        sizeBytes: record.sizeBytes,
+        changeNote: req.body.changeNote || `Version ${currentVerNum} archive`,
+        createdAt: record.updatedAt || new Date(),
+      };
+
+      if (!record.versions) {
+        record.versions = [];
+      }
+      record.versions.push(archivedVersion as any);
+
+      const aad = `${record._id.toString()}|${record.patientId.toString()}`;
+      const encrypted = encrypt(fileBytes, aad);
+
+      record.currentVersion = currentVerNum + 1;
+      record.sha256 = newHash;
+      record.encryptedPayload = {
+        ciphertext: encrypted.ciphertext,
+        iv: encrypted.iv,
+        authTag: encrypted.authTag,
+        keyVersion: 1,
+      };
+      record.originalFilename = file.originalname;
+      record.mimeType = file.mimetype;
+      record.sizeBytes = file.size;
+      record.status = 'ENCRYPTED';
+      await record.save();
+
+      await AuditService.record({
+        actorId: req.user.userId,
+        role: req.user.role,
+        action: 'RECORD_VERSION_CREATED',
+        targetId: record._id.toString(),
+        requestId: req.requestId || 'unknown',
+        ip: req.ip,
+        metadata: { newVersion: record.currentVersion, sha256: newHash },
+      });
+
+      res.status(201).json({
+        status: 'SUCCESS',
+        message: 'New record version created successfully',
+        currentVersion: record.currentVersion,
+        sha256: newHash,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  public static async listVersions(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      if (!req.user) throw new AppError('Unauthorized', 401);
+
+      const record = await MedicalRecord.findOne({ _id: req.params.id, deletedAt: null });
+      if (!record) {
+        throw new AppError('Medical record not found', 404);
+      }
+
+      const allowed = await can(
+        { userId: req.user.userId, role: req.user.role },
+        'record:read',
+        { recordPatientId: record.patientId.toString() }
+      );
+      if (!allowed) {
+        throw new AppError('Unauthorized to inspect record versions', 403);
+      }
+
+      const versionHistory = (record.versions || []).map((v) => ({
+        versionNumber: v.versionNumber,
+        sha256: v.sha256,
+        originalFilename: v.originalFilename,
+        sizeBytes: v.sizeBytes,
+        changeNote: v.changeNote,
+        createdAt: v.createdAt,
+      }));
+
+      versionHistory.push({
+        versionNumber: record.currentVersion || 1,
+        sha256: record.sha256,
+        originalFilename: record.originalFilename,
+        sizeBytes: record.sizeBytes,
+        changeNote: 'Current active version',
+        createdAt: record.updatedAt || new Date(),
+      });
+
+      res.status(200).json({
+        currentVersion: record.currentVersion || 1,
+        versions: versionHistory.sort((a, b) => b.versionNumber - a.versionNumber),
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }

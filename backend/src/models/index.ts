@@ -11,3 +11,4 @@ export * from './CaregiverAccess.js';
 export * from './Organization.js';
 export * from './Membership.js';
 export * from './SecurityEvent.js';
+export * from './HealthMetric.js';

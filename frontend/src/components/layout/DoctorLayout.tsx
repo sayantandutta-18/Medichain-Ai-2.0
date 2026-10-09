@@ -14,7 +14,9 @@ import {
   LogOut,
   Menu,
   X,
+  Layers,
 } from 'lucide-react';
+import { NotificationBell } from '../common/NotificationBell.js';
 
 export const DoctorLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -24,6 +26,7 @@ export const DoctorLayout: React.FC = () => {
     { to: '/doctor', label: 'Doctor Dashboard', icon: LayoutDashboard, end: true },
     { to: '/doctor/requests', label: 'My Access Requests', icon: UserCheck },
     { to: '/doctor/request-access', label: 'Request Patient Access', icon: UserPlus },
+    { to: '/doctor/explorer', label: 'Blockchain Explorer', icon: Layers },
     { to: '/doctor/audit', label: 'Practitioner Audit Log', icon: History },
   ];
 
@@ -187,12 +190,17 @@ export const DoctorLayout: React.FC = () => {
         {renderVerificationBanner()}
 
         {/* Mandatory Medical Disclaimer Banner */}
-        <div className="bg-slate-900/90 border-b border-slate-800 px-6 py-2 text-slate-400 text-xs flex items-center gap-2">
-          <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-          <span>
-            <strong>Clinical Safety Protocol:</strong> MediChain-AI is a portfolio MVP. It is NOT a
-            medical device or diagnostic platform. All authorizations are enforced server-side.
-          </span>
+        <div className="bg-slate-900/90 border-b border-slate-800 px-6 py-2 text-slate-400 text-xs flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span className="truncate">
+              <strong>Clinical Safety Protocol:</strong> MediChain-AI is a portfolio MVP. It is NOT a
+              medical device or diagnostic platform. All authorizations are enforced server-side.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <NotificationBell />
+          </div>
         </div>
 
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">

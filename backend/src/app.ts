@@ -11,6 +11,12 @@ import { accessRouter } from './routes/access.js';
 import { recordRouter } from './routes/record.js';
 import { auditRouter } from './routes/audit.js';
 import { aiRouter } from './routes/ai.js';
+import { notificationRouter } from './routes/notification.js';
+import { emergencyRouter } from './routes/emergency.js';
+import { shareRouter } from './routes/share.js';
+import { analyticsRouter } from './routes/analytics.js';
+import { adminRouter } from './routes/admin.js';
+import { blockchainRouter } from './routes/blockchain.js';
 
 export function createApp(): Express {
   const app = express();
@@ -45,6 +51,12 @@ export function createApp(): Express {
   app.use('/api/v1', recordRouter);
   app.use('/api/v1', auditRouter);
   app.use('/api/v1', aiRouter);
+  app.use('/api/v1', notificationRouter);
+  app.use('/api/v1', emergencyRouter);
+  app.use('/api/v1', shareRouter);
+  app.use('/api/v1', analyticsRouter);
+  app.use('/api/v1', adminRouter);
+  app.use('/api/v1', blockchainRouter);
 
   // 404 handler for unknown routes
   app.use(notFoundHandler);

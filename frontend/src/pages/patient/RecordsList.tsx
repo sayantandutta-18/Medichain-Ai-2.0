@@ -24,6 +24,11 @@ import {
   FileQuestion,
   HelpCircle,
   Info,
+  Share2,
+  GitBranch,
+  GitCompare,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 export const RecordsList: React.FC = () => {
@@ -50,6 +55,30 @@ export const RecordsList: React.FC = () => {
   const [deleting, setDeleting] = useState<boolean>(false);
 
   const [anchorLoadingId, setAnchorLoadingId] = useState<string | null>(null);
+
+  // Feature 04: Share Modal State
+  const [shareModalRecord, setShareModalRecord] = useState<MedicalRecord | null>(null);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [shareDuration, setShareDuration] = useState<number>(60);
+  const [shareSingleUse, setShareSingleUse] = useState<boolean>(true);
+  const [shareGenerating, setShareGenerating] = useState<boolean>(false);
+  const [shareCopied, setShareCopied] = useState<boolean>(false);
+
+  // Feature 08: Compare Modal State
+  const [compareModalOpen, setCompareModalOpen] = useState<boolean>(false);
+  const [compareRecordA, setCompareRecordA] = useState<string>('');
+  const [compareRecordB, setCompareRecordB] = useState<string>('');
+  const [compareResult, setCompareResult] = useState<any | null>(null);
+  const [compareLoading, setCompareLoading] = useState<boolean>(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
+
+  // Feature 10: Version History Modal State
+  const [versionModalRecord, setVersionModalRecord] = useState<MedicalRecord | null>(null);
+  const [versionsList, setVersionsList] = useState<any[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState<boolean>(false);
+  const [newVersionFile, setNewVersionFile] = useState<File | null>(null);
+  const [newVersionNote, setNewVersionNote] = useState<string>('');
+  const [uploadingVersion, setUploadingVersion] = useState<boolean>(false);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -161,6 +190,100 @@ export const RecordsList: React.FC = () => {
     }
   };
 
+  // Feature 04: Share Handlers
+  const handleOpenShare = (record: MedicalRecord) => {
+    setShareModalRecord(record);
+    setShareLink(null);
+    setShareCopied(false);
+    setShareDuration(60);
+    setShareSingleUse(true);
+  };
+
+  const handleGenerateShareLink = async () => {
+    if (!shareModalRecord) return;
+    try {
+      setShareGenerating(true);
+      const res = await apiClient.post('/shares', {
+        recordId: shareModalRecord._id,
+        expiresInMinutes: shareDuration,
+        singleUse: shareSingleUse,
+      });
+      const token = res.data.shareLink?.token;
+      if (token) {
+        setShareLink(`${window.location.origin}/share/${token}`);
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to create share link');
+    } finally {
+      setShareGenerating(false);
+    }
+  };
+
+  // Feature 10: Version Handlers
+  const handleOpenVersions = async (record: MedicalRecord) => {
+    setVersionModalRecord(record);
+    setVersionsList([]);
+    setVersionsLoading(true);
+    try {
+      const res = await apiClient.get(`/records/${record._id}/versions`);
+      setVersionsList(res.data.versions || []);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to fetch versions');
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  const handleUploadNewVersion = async () => {
+    if (!versionModalRecord || !newVersionFile) return;
+    try {
+      setUploadingVersion(true);
+      const formData = new FormData();
+      formData.append('file', newVersionFile);
+      if (newVersionNote.trim()) {
+        formData.append('changeNote', newVersionNote.trim());
+      }
+      await apiClient.post(`/records/${versionModalRecord._id}/versions`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setVersionModalRecord(null);
+      setNewVersionFile(null);
+      setNewVersionNote('');
+      await fetchRecords();
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Failed to upload new version');
+    } finally {
+      setUploadingVersion(false);
+    }
+  };
+
+  // Feature 08: Compare Handlers
+  const handleRunCompare = async () => {
+    if (!compareRecordA || !compareRecordB) return;
+    try {
+      setCompareLoading(true);
+      setCompareError(null);
+      setCompareResult(null);
+      const res = await apiClient.post('/ai/records/compare', {
+        recordIdA: compareRecordA,
+        recordIdB: compareRecordB,
+      });
+      if (res.data.status === 'SUCCESS') {
+        setCompareResult(res.data.comparison);
+      } else {
+        setCompareError(res.data.message || 'Comparison could not be completed');
+      }
+    } catch (err: any) {
+      if (err.response?.status === 503) {
+        setCompareError('AI service is currently unavailable: OPENAI_API_KEY is not configured');
+      } else {
+        setCompareError(err.response?.data?.message || 'Failed to compare records');
+      }
+    } finally {
+      setCompareLoading(false);
+    }
+  };
+
   const recordTypes: Array<{ label: string; value: string }> = [
     { label: 'All Types', value: 'ALL' },
     { label: 'Lab Reports', value: 'LAB_REPORT' },
@@ -182,13 +305,26 @@ export const RecordsList: React.FC = () => {
             Cryptographically sealed vault with verifiable tamper-evidence.
           </p>
         </div>
-        <Link
-          to="/upload"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-teal-900/30 cursor-pointer self-start sm:self-auto"
-        >
-          <Upload className="w-4 h-4" />
-          Upload Record
-        </Link>
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <button
+            onClick={() => {
+              setCompareModalOpen(true);
+              setCompareResult(null);
+              setCompareError(null);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-navy-900 hover:bg-slate-800 text-teal-300 border border-teal-500/30 rounded-xl text-sm font-semibold transition-all shadow-md cursor-pointer"
+          >
+            <GitCompare className="w-4 h-4 text-teal-400" />
+            Compare Records (AI)
+          </button>
+          <Link
+            to="/upload"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 hover:bg-teal-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-teal-900/30 cursor-pointer"
+          >
+            <Upload className="w-4 h-4" />
+            Upload Record
+          </Link>
+        </div>
       </div>
 
       {/* Filters and Search Bar */}
@@ -341,6 +477,24 @@ export const RecordsList: React.FC = () => {
                       Delete
                     </button>
                   )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handleOpenShare(record)}
+                    className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-navy-800 hover:bg-navy-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5 text-teal-400" />
+                    Share Link
+                  </button>
+
+                  <button
+                    onClick={() => handleOpenVersions(record)}
+                    className="flex items-center justify-center gap-1.5 py-1.5 px-3 bg-navy-800 hover:bg-navy-750 text-slate-200 border border-slate-700 rounded-xl text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    <GitBranch className="w-3.5 h-3.5 text-indigo-400" />
+                    v{record.currentVersion || 1} History
+                  </button>
                 </div>
               </div>
             </div>
@@ -575,6 +729,248 @@ export const RecordsList: React.FC = () => {
               {deleting ? 'Deleting...' : 'Confirm Delete'}
             </button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Share Link Modal */}
+      <Modal
+        isOpen={!!shareModalRecord}
+        onClose={() => {
+          setShareModalRecord(null);
+          setShareLink(null);
+        }}
+        title={`Share Document: ${shareModalRecord?.title}`}
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-xs">
+          <p className="text-slate-300">
+            Generate an expiring cryptographic share token to grant temporary view access to this document.
+          </p>
+
+          {!shareLink ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-slate-400 mb-1">Validity Duration</label>
+                <select
+                  value={shareDuration}
+                  onChange={(e) => setShareDuration(Number(e.target.value))}
+                  className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                >
+                  <option value={15}>15 minutes</option>
+                  <option value={60}>1 hour</option>
+                  <option value={1440}>24 hours</option>
+                  <option value={4320}>3 days</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="singleUseCheck"
+                  checked={shareSingleUse}
+                  onChange={(e) => setShareSingleUse(e.target.checked)}
+                  className="rounded border-slate-700 bg-navy-950 text-teal-500 focus:ring-0"
+                />
+                <label htmlFor="singleUseCheck" className="text-slate-300 cursor-pointer">
+                  Revoke automatically after single view (Single-use token)
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShareModalRecord(null)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={shareGenerating}
+                  onClick={handleGenerateShareLink}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl flex items-center gap-1.5"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  {shareGenerating ? 'Generating...' : 'Create Secure Link'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-3 bg-navy-950 border border-teal-500/30 rounded-xl space-y-2">
+                <span className="text-[10px] uppercase text-teal-400 font-mono block">Secure Share Link</span>
+                <p className="font-mono text-slate-200 text-xs break-all">{shareLink}</p>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    if (shareLink) {
+                      navigator.clipboard.writeText(shareLink);
+                      setShareCopied(true);
+                      setTimeout(() => setShareCopied(false), 2000);
+                    }
+                  }}
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-medium flex items-center gap-1.5"
+                >
+                  {shareCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{shareCopied ? 'Copied' : 'Copy Link'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Version History Modal */}
+      <Modal
+        isOpen={!!versionModalRecord}
+        onClose={() => {
+          setVersionModalRecord(null);
+          setNewVersionFile(null);
+          setNewVersionNote('');
+        }}
+        title={`Version History — ${versionModalRecord?.title}`}
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-5 text-xs">
+          <div className="space-y-2">
+            <h4 className="font-semibold text-slate-300">Recorded Versions</h4>
+            {versionsLoading ? (
+              <p className="text-slate-400">Loading versions...</p>
+            ) : versionsList.length === 0 ? (
+              <p className="text-slate-500">Only initial version (v1) exists.</p>
+            ) : (
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {versionsList.map((v: any) => (
+                  <div key={v.versionNumber} className="p-3 bg-navy-950 border border-slate-800 rounded-xl space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-teal-300">Version {v.versionNumber}</span>
+                      <span className="font-mono text-slate-500 text-[10px]">
+                        {new Date(v.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-slate-400 font-mono text-[10px]">SHA-256: {v.sha256.substring(0, 16)}...</p>
+                    {v.changeNote && <p className="text-slate-300 text-xs italic">&ldquo;{v.changeNote}&rdquo;</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="p-4 bg-navy-950 border border-slate-800 rounded-2xl space-y-3">
+            <h4 className="font-semibold text-white">Upload New Version</h4>
+            <input
+              type="file"
+              onChange={(e) => setNewVersionFile(e.target.files?.[0] || null)}
+              className="text-xs text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-slate-800 file:text-slate-200 file:cursor-pointer"
+            />
+            <input
+              type="text"
+              placeholder="Change note (e.g. Updated with lab re-test values)"
+              value={newVersionNote}
+              onChange={(e) => setNewVersionNote(e.target.value)}
+              className="w-full bg-navy-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs focus:outline-none focus:border-teal-500"
+            />
+            <button
+              disabled={!newVersionFile || uploadingVersion}
+              onClick={handleUploadNewVersion}
+              className="w-full py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-xl font-semibold disabled:opacity-40 transition-colors"
+            >
+              {uploadingVersion ? 'Encrypting & Committing...' : 'Commit New Version'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Compare Records Modal */}
+      <Modal
+        isOpen={compareModalOpen}
+        onClose={() => setCompareModalOpen(false)}
+        title="AI Document Comparison"
+        maxWidth="max-w-3xl"
+      >
+        <div className="space-y-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-slate-400 mb-1">Select First Document (A)</label>
+              <select
+                value={compareRecordA}
+                onChange={(e) => setCompareRecordA(e.target.value)}
+                className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-white"
+              >
+                <option value="">Choose Record...</option>
+                {records.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.title} ({r.type})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-400 mb-1">Select Second Document (B)</label>
+              <select
+                value={compareRecordB}
+                onChange={(e) => setCompareRecordB(e.target.value)}
+                className="w-full bg-navy-950 border border-slate-700 rounded-xl px-3 py-2 text-white"
+              >
+                <option value="">Choose Record...</option>
+                {records.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.title} ({r.type})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              disabled={!compareRecordA || !compareRecordB || compareRecordA === compareRecordB || compareLoading}
+              onClick={handleRunCompare}
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl flex items-center gap-1.5 disabled:opacity-40"
+            >
+              <GitCompare className="w-3.5 h-3.5" />
+              {compareLoading ? 'Analyzing...' : 'Run Side-by-Side Comparison'}
+            </button>
+          </div>
+
+          {compareError && (
+            <div className="p-3 bg-red-950/40 border border-red-500/30 text-red-200 rounded-xl">
+              {compareError}
+            </div>
+          )}
+
+          {compareResult && (
+            <div className="p-4 bg-navy-950 border border-teal-500/30 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span className="font-bold text-teal-300">Comparison Findings</span>
+                <span className="text-[10px] text-teal-400 font-mono">Validated Schema</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-3 bg-navy-900 rounded-xl border border-slate-800">
+                  <h5 className="font-semibold text-white mb-1">Record A Highlights</h5>
+                  <p className="text-slate-300 leading-relaxed">{compareResult.recordAHighlights || 'None'}</p>
+                </div>
+                <div className="p-3 bg-navy-900 rounded-xl border border-slate-800">
+                  <h5 className="font-semibold text-white mb-1">Record B Highlights</h5>
+                  <p className="text-slate-300 leading-relaxed">{compareResult.recordBHighlights || 'None'}</p>
+                </div>
+              </div>
+
+              {compareResult.differences && (
+                <div className="p-3 bg-navy-900 rounded-xl border border-slate-800">
+                  <h5 className="font-semibold text-white mb-1">Key Changes & Evolution</h5>
+                  <p className="text-slate-300 leading-relaxed">{compareResult.differences}</p>
+                </div>
+              )}
+
+              <div className="p-3 bg-amber-950/40 border border-amber-600/30 rounded-xl text-[11px] text-amber-200">
+                <strong>Non-Diagnostic Disclaimer:</strong> {compareResult.disclaimer || 'AI comparison is an informational review tool only and does not diagnose conditions or replace clinical review.'}
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

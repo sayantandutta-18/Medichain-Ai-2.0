@@ -16,6 +16,16 @@ export interface IBlockchainAnchor {
   anchoredAt?: Date;
 }
 
+export interface IRecordVersion {
+  versionNumber: number;
+  sha256: string;
+  encryptedPayload: IEncryptedPayload;
+  originalFilename?: string;
+  sizeBytes?: number;
+  changeNote?: string;
+  createdAt: Date;
+}
+
 export interface IMedicalRecord {
   patientId: Types.ObjectId;
   title: string;
@@ -28,6 +38,8 @@ export interface IMedicalRecord {
   mimeType?: string;
   sizeBytes?: number;
   blockchainAnchor?: IBlockchainAnchor;
+  currentVersion?: number;
+  versions?: IRecordVersion[];
   deletedAt?: Date | null;
   schemaVersion: number;
   createdAt?: Date;
@@ -66,8 +78,29 @@ const encryptedPayloadSchema = new Schema<IEncryptedPayload>(
   { _id: false }
 );
 
+const recordVersionSchema = new Schema<IRecordVersion>(
+  {
+    versionNumber: { type: Number, required: true },
+    sha256: { type: String, required: true },
+    encryptedPayload: { type: encryptedPayloadSchema, required: true },
+    originalFilename: { type: String },
+    sizeBytes: { type: Number },
+    changeNote: { type: String },
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const medicalRecordSchema = new Schema<MedicalRecordDocument>(
   {
+    currentVersion: {
+      type: Number,
+      default: 1,
+    },
+    versions: {
+      type: [recordVersionSchema],
+      default: [],
+    },
     patientId: {
       type: Schema.Types.ObjectId,
       ref: 'User',

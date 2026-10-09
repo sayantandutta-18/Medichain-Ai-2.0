@@ -15,7 +15,11 @@ import {
   LogOut,
   Menu,
   X,
+  Clock,
+  Activity,
+  Layers,
 } from 'lucide-react';
+import { NotificationBell } from '../common/NotificationBell.js';
 
 export const PatientLayout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -24,6 +28,9 @@ export const PatientLayout: React.FC = () => {
   const navLinks = [
     { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
     { to: '/records', label: 'My Records', icon: FileText },
+    { to: '/timeline', label: 'Medical Timeline', icon: Clock },
+    { to: '/analytics', label: 'Health Analytics', icon: Activity },
+    { to: '/explorer', label: 'Blockchain Explorer', icon: Layers },
     { to: '/upload', label: 'Upload Document', icon: Upload },
     { to: '/requests', label: 'Access Requests', icon: UserCheck },
     { to: '/audit', label: 'Privacy & Audit Log', icon: History },
@@ -154,12 +161,16 @@ export const PatientLayout: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Medical disclaimer header banner */}
-        <div className="bg-amber-950/50 border-b border-amber-600/30 px-6 py-2.5 text-amber-200 text-xs flex items-center gap-2.5">
-          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>
-            <strong>Portfolio MVP:</strong> MediChain-AI is a patient-controlled medical records MVP. It
-            is NOT a medical device, diagnostic system, or compliant healthcare platform.
-          </span>
+        <div className="bg-amber-950/50 border-b border-amber-600/30 px-6 py-2 text-amber-200 text-xs flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="truncate">
+              <strong>Portfolio MVP:</strong> Patient-controlled medical records MVP. Not a medical device or diagnostic platform.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <NotificationBell />
+          </div>
         </div>
 
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
