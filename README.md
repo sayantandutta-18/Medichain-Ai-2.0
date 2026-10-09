@@ -1,251 +1,366 @@
-# MediChain-AI
 
-> **Patient-Controlled Medical Records Portfolio MVP with Cryptographic Integrity, Sui Blockchain Anchoring, and Safe Voice & AI Assistance.**
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://reactjs.org/)
-[![Vite](https://img.shields.io/badge/Vite-6.0-646cff.svg)](https://vitejs.dev/)
-[![Express](https://img.shields.io/badge/Express-4.21-lightgrey.svg)](https://expressjs.com/)
-[![Sui Blockchain](https://img.shields.io/badge/Sui-Testnet%20%2F%20Move-4da2ff.svg)](https://sui.io/)
-[![Vitest](https://img.shields.io/badge/Vitest-3.0-green.svg)](https://vitest.dev/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+# MediChain AI 2.0
 
----
+### Your Health Records. Your Permission. Verifiable Integrity.
 
-> [!CAUTION]
-> ### CRITICAL DISCLAIMER: NOT A MEDICAL DEVICE
-> MediChain-AI is a portfolio educational and technical MVP prototype demonstrating cryptographic access delegation, zero-trust architectures, and decentralized integrity anchoring.  
-> **It is NOT a certified medical device, diagnostic platform, clinical decision support software, or regulatory-compliant healthcare platform** (such as HIPAA, GDPR health data, or DPDP Act compliant systems). It must **NEVER** be used for clinical decision-making, diagnosis, medical treatment, or emergency triage.
+**MediChain AI 2.0** is a privacy-focused healthcare platform designed to give patients greater control over their medical records through consent-based access, document encryption, cryptographic integrity verification, Sui blockchain integration, and AI-assisted medical information explanations.
+
+> **Project Type:** Full-Stack Healthcare Technology MVP\
+> **Focus:** Healthcare · AI · Cybersecurity · Blockchain · Web Development
 
 ---
 
-## Executive Summary
+## 1. Overview
 
-Traditional Electronic Health Record (EHR) platforms suffer from fragmented silos, opaque data handling, and vendor lock-in. **MediChain-AI** re-architects medical record governance with **patient sovereignty at its center**:
+Medical records are often scattered across different hospitals, laboratories, and healthcare platforms. Patients may struggle to manage their health information and understand who has access to it.
 
-1. **Zero-Trust Cryptographic Document Storage:** Documents are encrypted at rest with **AES-256-GCM** using a unique 12-byte random IV per encryption and Additional Authenticated Data (AAD) bound to the `recordId` and `patientId`. Plaintext medical records or full medical texts are **never stored on-chain or in unencrypted storage**.
-2. **Decentralized Integrity Anchoring:** Raw document SHA-256 integrity digests are anchored to the **Sui blockchain** via custom Move smart contracts, providing cryptographic non-repudiation and proof of existence without exposing confidential health data.
-3. **Deny-by-Default Central Authorization:** All access is governed server-side through a single authorization policy matrix (`can(actor, action, resource)`). The frontend is strictly an interface, never the security boundary.
-4. **Tamper-Evident Hash-Chained Audit Trail:** Every sensitive action (reads, downloads, grants, revocations, failed attempts) is recorded in an append-only, SHA-256 hash-chained log starting from a canonical genesis hash.
-5. **Safe AI & Voice Assistance Guardrails:** AI explanations and voice actions are strictly bound by schema validation (Zod), prompt boundaries, data minimization (PII redaction), and explicit preview-and-confirmation workflows before modifying data (Master Rule 12).
+MediChain AI 2.0 explores a patient-centric approach to medical data management by combining secure backend authorization, cryptographic verification, blockchain-based integrity proofs, and AI-assisted explanations.
 
----
+The platform is designed around one central principle:
 
-## Architectural Principles & Master Rules
+**Patients should have greater visibility and control over who can access their medical records.**
 
-MediChain-AI is engineered according to non-negotiable engineering principles:
+## 2. Problem Statement
 
-- **Deny by Default:** No access to records or patient data is granted unless an explicit, active, unexpired, and unrevoked consent grant exists.
-- **Cryptographic Independence:** Cryptographic proofs and AES-256-GCM authentication tags guarantee that tampering with ciphertext or AAD is immediately rejected.
-- **On-Chain Privacy:** No medical records, patient identifiers, or clinical texts touch the blockchain. Only cryptographic SHA-256 digests and record hashes are anchored.
-- **No Stack Traces / Safe Errors:** Client responses always contain a standardized `requestId` and safe, non-revealing error descriptions.
-- **Zero Frontend Hardcoded Endpoints:** Zero `localhost` literals in frontend source code (`frontend/src/`) or production bundles (`frontend/dist/`). All endpoints route via configurable environment variables.
+Traditional medical-record management can present several challenges:
 
----
+- Medical records are distributed across multiple healthcare providers.
+- Patients may have limited visibility into data-access permissions.
+- Unauthorized access to sensitive information is a security risk.
+- Detecting whether a document has been modified can be difficult.
+- Medical reports may contain terminology that is difficult for patients to understand.
 
-## Monorepo Layout
+## 3. Our Solution
+
+MediChain AI 2.0 aims to address these challenges through:
+
+- **Patient-Controlled Access:** Consent-based permissions for sharing records with doctors.
+- **Encrypted Medical Records:** Protect supported documents using AES-256-GCM encryption.
+- **Cryptographic Integrity:** Use SHA-256 hashes to verify document integrity.
+- **Blockchain Anchoring:** Use Sui blockchain integration to anchor integrity proofs without storing medical documents on-chain.
+- **Auditability:** Maintain records of sensitive actions where implemented.
+- **AI-Assisted Explanations:** Help users understand supported medical information in simpler language.
+- **Role-Based Workspaces:** Provide separate workflows for patients, doctors, and administrators.
+
+## 4. Key Features
+
+### Medical Record Management
+
+- Upload and organise medical records.
+- Associate records with the appropriate patient.
+- Calculate cryptographic hashes for integrity verification.
+- Support secure document handling according to backend configuration.
+
+### Patient Consent Management
+
+- Request access to patient records.
+- Grant permissions with defined scopes and expiry.
+- Revoke access when it is no longer needed.
+- Enforce access permissions on the backend.
+
+### Blockchain Integrity Verification
+
+- Integrate with Sui and Move smart contracts.
+- Anchor document-integrity proofs.
+- Keep medical documents and clinical text off-chain.
+- Distinguish real blockchain transactions from simulated or unavailable states.
+
+### AI Medical Information Assistant
+
+- Explain supported medical text in simpler language.
+- Provide patient-friendly summaries where implemented.
+- Keep AI provider credentials on the backend.
+- Treat generated explanations as informational rather than diagnostic.
+
+### Security and Auditability
+
+- Authentication and server-side authorization.
+- Input validation and secure error handling.
+- Audit logging for supported sensitive operations.
+- Protection against unauthorized and cross-patient access.
+
+### Role-Based Dashboards
+
+- Patient workspace for personal records and consent.
+- Doctor workspace for authorised record access.
+- Administrative workspace for supported governance functions.
+
+*Feature availability depends on the current implementation and environment configuration.*
+
+## 5. Technology Stack
+
+| Layer                  | Technologies                                   |
+| ---------------------- | ---------------------------------------------- |
+| Frontend               | React, TypeScript, Vite                        |
+| Styling and Animation  | Tailwind CSS, Framer Motion, where configured  |
+| 3D Interface           | Three.js / React Three Fiber, where configured |
+| Backend                | Node.js, Express.js, TypeScript                |
+| Database               | MongoDB, Mongoose                              |
+| Validation             | Zod, where configured                          |
+| Authentication         | JWT and password hashing, where configured     |
+| Encryption             | AES-256-GCM, where configured                  |
+| Integrity Verification | SHA-256                                        |
+| Blockchain             | Sui, Move smart contracts                      |
+| Testing                | Vitest and repository-defined test tools       |
+
+## 6. System Architecture
 
 ```
-MediChain-AI/
+┌──────────────────────────────┐
+│       React Frontend         │
+│ Patient · Doctor · Admin     │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│       Express API            │
+│ Authentication & Validation  │
+│ Consent & Access Policies    │
+│ Records · AI · Audit         │
+└────────┬────────────┬────────┘
+         │            │
+         ▼            ▼
+┌────────────────┐  ┌─────────────────┐
+│    MongoDB     │  │   Sui Blockchain │
+│ Application    │  │ Integrity proofs │
+│ Data & Records │  │ and transactions │
+└────────────────┘  └─────────────────┘
+```
+
+Sensitive medical documents should remain off-chain. Only the intended cryptographic proof and necessary non-sensitive transaction data should be anchored.
+
+## 7. Repository Structure
+
+```
+MediChain-AI-2.0/
 ├── backend/
 │   ├── src/
-│   │   ├── blockchain/         # Sui Move RPC client & simulated fallbacks
-│   │   ├── config/             # Environment validation (Zod) & DB configuration
-│   │   ├── controllers/        # REST route handlers & validation logic
-│   │   ├── middleware/         # Auth, Helmet, RateLimiting, Request ID, Safe Errors
-│   │   ├── models/             # Mongoose schemas (Users, Records, Consents, Audit, Sessions...)
-│   │   ├── policy/             # Central policy module (can() deny-by-default matrix)
-│   │   ├── routes/             # Express v1 modular routers (Health, Auth, Records, AI...)
-│   │   ├── services/           # Business services (Crypto, Audit, AI, Webhook, Notifications)
-│   │   └── utils/              # Crypto (AES-256-GCM), Hash (SHA-256), QR (vector SVG)
-│   ├── scripts/
-│   │   ├── seed.ts             # Comprehensive portfolio demo seed script
-│   │   └── verify-audit.ts     # CLI cryptographic audit hash-chain verifier
-│   └── tests/                  # 15 Vitest test suites (125 tests, 100% passing)
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   └── app.ts
+│   └── tests/
 ├── frontend/
-│   ├── src/
-│   │   ├── api/                # Axios client with interceptors and dynamic base URL
-│   │   ├── components/         # Common UI, Modals, Voice Assistant, Layouts
-│   │   ├── context/            # Authentication & State management
-│   │   ├── pages/              # Patient, Doctor, Admin dashboards & First Responder views
-│   │   └── tests/              # 5 Vitest component & integration test suites
-│   └── vite.config.ts          # Vite build config with path aliases & Vitest setup
+│   └── src/
+│       ├── api/
+│       ├── components/
+│       ├── context/
+│       ├── pages/
+│       └── routes/
 ├── sui/
-│   ├── Move.toml               # Sui Move package manifest
-│   └── sources/
-│       └── record_registry.move# Move smart contract module for immutable anchoring
-├── docs/                       # Architecture diagrams, ADRs, security boundaries
-└── scripts/
-    └── seed-demo.ts            # Monorepo runner for demo database seeding
+│   ├── sources/
+│   └── Move.toml
+├── scripts/
+├── docs/
+├── docker-compose.yml
+├── package.json
+└── README.md
 ```
 
----
+*The actual directory structure may vary slightly; follow the files in the current repository.*
 
-## 26 Features Portfolio Matrix
+## 8. Getting Started
 
-| # | Feature | Checkpoint | Description |
-|---|---|:---:|---|
-| **01** | **Patient Record Upload & Encryption** | CP 03 | AES-256-GCM authenticated encryption with random 12-byte IV per encryption and AAD bound to `recordId\|patientId`. |
-| **02** | **Granular Clinical Access Delegation** | CP 04 | Time-bound consent grants (`VIEW`, `DOWNLOAD`, `FULL`) with cryptographically verifiable receipts. |
-| **03** | **Sui Blockchain Integrity Anchoring** | CP 05 | On-chain anchoring of SHA-256 source digests via Sui Move contracts (with automated simulated testnet fallback). |
-| **04** | **Tamper-Evident Hash-Chained Audit Trail** | CP 06 | Append-only audit trail linking logs via SHA-256 hash chains (`prevHash` + `hash`), verifiable via CLI and API. |
-| **05** | **Safe AI Medical Record Explainer** | CP 07 | Patient-friendly, plain-language document breakdown with PII redaction and strict non-diagnostic disclaimers. |
-| **06** | **Patient Dashboard & History** | CP 08 | Real-time overview of active medical records, recent access grants, notifications, and security alerts. |
-| **07** | **Doctor Dashboard & Clinical Workspace** | CP 09 | Practitioner interface for requesting record access, browsing approved dossiers, and reviewing lab results. |
-| **08** | **Admin Governance & Doctor Verification** | CP 10 | Administrative review portal for validating physician medical licenses, audit trail status, and system stats. |
-| **09** | **Real-Time Notification Engine** | CP 11 | In-app notification dispatcher for consent requests, approvals, revocations, and system events. |
-| **10** | **Time-Bound Temporary Share Links** | CP 12 | Secure, expiring token-gated links for external review without requiring account creation. |
-| **11** | **Multi-Version Medical Documenting** | CP 14 | Immutable version tracking for record updates, preserving full historical cryptographic lineage. |
-| **12** | **Encrypted Clinical Progress Notes** | CP 14 | Doctor-authored clinical notes encrypted with AES-256-GCM and bound to patient and practitioner identities. |
-| **13** | **Longitudinal Vitals & Health Metrics** | CP 14 | Continuous tracking of blood pressure, heart rate, blood glucose, weight, and temperature with clinical bounds. |
-| **14** | **Health Goal Tracking & Milestones** | CP 14 | Patient wellness goals with quantifiable targets, milestone logs, and longitudinal trend indicators. |
-| **15** | **Caregiver & Proxy Access Management** | CP 14 | Delegated family and caregiver access permissions with scoped authority and revocation controls. |
-| **16** | **Clinical Appointment Scheduling** | CP 14 | Doctor-patient appointment coordination with status tracking (scheduled, completed, cancelled). |
-| **17** | **Digital Clinical Prescriptions** | CP 14 | Practitioner e-prescribing module tracking drug names, dosage regimens, frequencies, and durations. |
-| **18** | **Prescription Drug Interaction Engine** | CP 14 | Deterministic safety screening engine checking known multi-drug interactions (e.g., Warfarin + Aspirin). |
-| **19** | **Hospital & Organization Multi-Tenancy** | CP 14 | Role-based organizational memberships linking clinics, departments, and practitioners. |
-| **20** | **Security Events & Suspicious Activity Log** | CP 14 | Real-time security telemetry detecting brute-force attempts, session anomalies, and policy denials. |
-| **21** | **Emergency Access & Vector SVG QR Code** | CP 15 | First-responder emergency profile access with zero-dependency standalone vector SVG QR matrix generation. |
-| **22** | **Multilingual AI Medical Translation** | CP 15 | AI medical explanation and translation into Spanish, French, German, and Hindi with schema validation. |
-| **23** | **Dynamic Consent Auto-Expiration Scanner** | CP 15 | Automated expiration engine identifying elapsed consents and executing cryptographic auto-revocations. |
-| **24** | **Medical Event Webhooks (HMAC-SHA256)** | CP 15 | Event delivery system dispatching signed HTTP webhooks (`X-MediChain-Signature`) to external endpoints. |
-| **25** | **Patient Health Dossier Export** | CP 15 | Comprehensive health history export (records, vitals, prescriptions, goals) with SHA-256 integrity checksum. |
-| **26** | **Multi-Device Session & Remote Revocation** | CP 15 | Granular device session manager tracking active clients, IPs, and device types with instant revocation. |
-| **VOICE** | **Voice AI Assistant with Preview Guardrail** | CP 15 | Web Speech API speech-to-intent engine requiring explicit visual preview and confirmation per Rule 12. |
+### Prerequisites
 
----
+Install the following before running the project:
 
-## System Integration & Health Diagnostics (Checkpoint 16)
+- Git
+- Node.js and npm versions supported by the repository
+- MongoDB, locally or through a hosted database
+- Optional Sui testnet configuration
+- Optional AI provider credentials
 
-The platform includes comprehensive liveness, readiness, and E2E integration subsystems:
+Verify your installation:
 
-- `GET /api/v1/health`: Returns overall system health, uptime, timestamp, memory usage, environment mode, and database connection state.
-- `GET /api/v1/health/live`: Lightweight liveness probe for container orchestrators (Kubernetes / Docker) confirming the HTTP process is responsive.
-- `GET /api/v1/health/ready`: Readiness probe verifying active MongoDB connectivity and encryption key initialization before traffic routing.
-- **End-to-End System Integration Suite (`backend/tests/e2e.system.test.ts`):** 11 sequential lifecycle test steps validating the entire cross-feature pipeline from registration and AES-256-GCM upload to Sui anchoring, consent receipts, clinical notes, drug interactions, voice intent guardrails, QR generation, dossier export, and cryptographic audit hash-chain verification.
-
----
-
-## Quickstart & Local Setup
-
-### 1. Prerequisites
-- **Node.js** >= 18.0.0
-- **npm** >= 9.0.0
-- **MongoDB** running locally (`mongodb://localhost:27017/medichain`) or a hosted MongoDB URI
-
-### 2. Environment Configuration
-Copy `.env.example` in `backend/` and configure your environment variables:
-```bash
-# In backend/.env
-PORT=5000
-NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/medichain
-JWT_SECRET=your_super_secret_jwt_key_at_least_32_characters_long
-JWT_EXPIRES_IN=1h
-ENCRYPTION_KEY=dGhpcy1pcy1hLTMyLWJ5dGUtZW5jcnlwdGlvbi1rZXktYmFzZTY0==
-CORS_ORIGIN=http://localhost:5173
-MAX_UPLOAD_MB=10
-SUI_NETWORK=testnet
+```
+node --version
+npm --version
+git --version
 ```
 
-### 3. Install Dependencies
-```bash
+### Step 1: Clone the Repository
+
+```
+git clone https://github.com/sayantandutta-18/Medichain-Ai-2.0.git
+cd Medichain-Ai-2.0
+```
+
+### Step 2: Install Dependencies
+
+```
 npm install
 ```
 
-### 4. Seed Comprehensive Portfolio Demo Data
-MediChain-AI includes an automated demo database seeder that populates realistic patients, verified physicians, AES-256-GCM encrypted records, approved consents with verifiable receipts, clinical notes, prescriptions, vitals, emergency profiles, and a valid cryptographic audit trail:
-```bash
-npm run seed
+Check the available scripts:
+
+```
+npm run
 ```
 
-Default seeded credentials:
-- **Patient Alice:** `patient.alice@example.dev` / `TestPassword123!`
-- **Verified Doctor Clara:** `doctor.clara@example.dev` / `TestPassword123!`
-- **System Admin:** `admin.system@example.dev` / `TestPassword123!`
+If the backend and frontend use separate package scripts, follow the instructions in their respective `package.json` files.
 
-### 5. Verify Cryptographic Audit Hash Chain
-Verify the tamper-evident audit trail at any time via CLI:
-```bash
-npm run verify:audit
+### Step 3: Configure Environment Variables
+
+Locate the project's example environment files and copy the relevant example to the expected local `.env` location.
+
+For example, in PowerShell, **only if this file exists**:
+
+```
+Copy-Item backend/.env.example backend/.env
 ```
 
-### 6. Run Development Servers
-Start backend and frontend in development mode:
-```bash
-# Terminal 1: Backend API
+Configure the variables required by the actual backend configuration. They may include:
+
+| Variable         | Purpose                             |
+| ---------------- | ----------------------------------- |
+| `NODE_ENV`       | Application environment             |
+| `PORT`           | Backend server port                 |
+| `MONGODB_URI`    | MongoDB connection                  |
+| `JWT_SECRET`     | Authentication token signing secret |
+| `ENCRYPTION_KEY` | Document-encryption key             |
+| `CORS_ORIGIN`    | Allowed frontend origin             |
+| `SUI_NETWORK`    | Sui network selection               |
+| AI provider key  | Server-side AI integration          |
+
+Use the exact variable names required by the repository.
+
+**Never commit `.env` files, passwords, API keys, wallet private keys, or seed phrases.** Use secure environment settings for deployments.
+
+### Step 4: Start the Backend
+
+If the backend defines a `dev` script:
+
+```
 npm --prefix backend run dev
+```
 
-# Terminal 2: Frontend App
+### Step 5: Start the Frontend
+
+Open another terminal at the repository root:
+
+```
 npm --prefix frontend run dev
 ```
 
----
+Open the frontend URL printed in the terminal. Confirm that the API base URL and backend port match your local configuration.
 
-## Test Execution & Verification
+> If either command is not defined in the repository, inspect that package's scripts and use the available development command.
 
-MediChain-AI maintains 100% test pass rate across all unit, integration, policy, and E2E suites:
+## 9. Security Design
 
-```bash
-# Run all backend tests (15 suites, 125 tests)
-npm run test
+Security is a central design goal of MediChain AI 2.0.
 
-# Run all frontend tests (5 suites, 30 tests)
-npm run test:frontend
+- **Server-Side Authorization:** Protected operations must be authorised by the backend.
+- **Patient Consent:** Access should respect permission scope, expiry, and revocation.
+- **Document Encryption:** Use authenticated encryption where implemented and configured.
+- **Integrity Verification:** Compare SHA-256 hashes to detect document changes.
+- **Data Minimisation:** Do not publish medical documents or clinical text on-chain.
+- **Secret Management:** Store credentials in environment variables or a deployment secret manager.
+- **AI Guardrails:** AI must not bypass application permissions or independently execute sensitive actions.
 
-# Run all suites concurrently
-npm run test:all
+Before any real-data use, the security design requires thorough independent review and testing.
 
-# Typecheck both backend and frontend
+## 10. Testing
+
+Run the scripts available in the repository:
+
+```
+npm run
+```
+
+Common checks, if defined, include:
+
+```
+npm test
 npm run typecheck
-npm run typecheck:frontend
-
-# Compile frontend production bundle
-npm run build:frontend
+npm run build
+npm run smoke
 ```
+
+Verify the actual output before claiming that tests pass. A successful frontend build alone does not establish that the backend, database, blockchain, and AI integrations all work correctly.
+
+Recommended security tests include:
+
+- Unauthenticated access to protected endpoints.
+- Access to another patient's records.
+- Access after consent expiry.
+- Access after consent revocation.
+- Invalid upload and input handling.
+- Document-integrity verification.
+- Correct handling of unavailable or simulated blockchain services.
+
+## 11. Blockchain Integration
+
+Sui blockchain integration is intended to provide an integrity-verification layer.
+
+The design aims to:
+
+1. Calculate a cryptographic hash for a document.
+2. Store the document through the configured application storage flow.
+3. Anchor the intended integrity proof through the Sui integration.
+4. Verify the proof when requested.
+5. Report whether the result is verified, simulated, unavailable, or mismatched.
+
+Blockchain status must reflect the actual result. Simulated transactions must never be presented as real on-chain transactions.
+
+## 12. Deployment
+
+A deployment requires configuration and verification of:
+
+1. Backend hosting and runtime environment.
+2. MongoDB connection and database access restrictions.
+3. Frontend production API URL.
+4. Production CORS origins and HTTPS.
+5. Secure environment variables.
+6. Optional Sui and AI credentials.
+7. Backend health checks and application logs.
+8. Production builds and end-to-end smoke tests.
+
+Use the build and start commands supported by the repository and hosting provider. Do not deploy with development credentials or unverified security assumptions.
+
+## 13. Future Improvements
+
+Potential development priorities include:
+
+- More comprehensive integration and end-to-end tests.
+- Better record search and medical timeline experiences.
+- Improved accessibility and responsive UI.
+- Stronger encryption-key rotation and recovery procedures.
+- Better security monitoring and audit verification.
+- Multilingual AI explanations with safety evaluations.
+- Improved deployment automation and observability.
+- Verified demo screenshots and a reproducible demo environment.
+
+## 14. Demo Guidelines
+
+For a portfolio demonstration:
+
+1. Use synthetic patient and medical-record data.
+2. Show the patient dashboard and record-management workflow.
+3. Demonstrate a doctor access request and patient consent.
+4. Show that unauthorised or revoked access is denied.
+5. Explain document-integrity verification.
+6. Clearly label real, simulated, and unavailable blockchain states.
+7. Demonstrate AI explanations without using real patient information.
+
+Add screenshots or a demo video here once they are available and verified.
+
+## 15. Important Disclaimer
+
+MediChain AI 2.0 is an **educational and portfolio MVP**. It is not a certified medical device, diagnostic system, or clinical decision-support tool. It is not represented as compliant with HIPAA, GDPR, India's DPDP Act, or any other healthcare regulation.
+
+Do not use it for diagnosis, treatment decisions, emergency triage, or real patient data. AI-generated explanations may be inaccurate and must not replace guidance from a qualified healthcare professional.
+
+## 16. License
+
+Add or verify the repository's `LICENSE` file before stating a specific license. If the project uses the MIT License, link to that file here.
 
 ---
 
-## Security Architecture & Policy Matrix
-
-```
-                        +----------------------------+
-                        |      Actor + Request       |
-                        +--------------+-------------+
-                                       |
-                                       v
-                        +----------------------------+
-                        |   can(actor, action, res)  |
-                        +--------------+-------------+
-                                       |
-             +-------------------------+-------------------------+
-             |                         |                         |
-             v                         v                         v
-       [PATIENT Role]            [DOCTOR Role]             [ADMIN Role]
-             |                         |                         |
-    Owns resource?                     |                   Platform ops &
-     /       \              Has active, unexpired,       verification actions
-   YES        NO            unrevoked consent grant?              |
-    |          |                   /       \                      v
-  ALLOW      DENY                YES        NO                  ALLOW
-                                  |          |
-                                ALLOW      DENY
-```
-
----
-
-## Sui Move Smart Contract Module
-
-Located in `sui/sources/record_registry.move`:
-- Exposes `record_registry::anchor_record(registry, sha256_hash, record_uuid, ctx)`.
-- Emits verifiable on-chain `RecordAnchoredEvent`.
-- Ensures immutable proof-of-existence without exposing sensitive clinical text.
-- Integrated seamlessly with testnet RPC and transparent simulated fallback mode.
-
----
-
-## License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
-#   M e d i c h a i n - A i - 2 . 0  
- 
+**MediChain AI 2.0 — Exploring privacy-first healthcare software through AI, cryptographic integrity, and blockchain technology.**
