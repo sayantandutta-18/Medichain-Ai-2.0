@@ -36,10 +36,28 @@ export function createApp(): Express {
   // Security headers via Helmet
   app.use(helmet());
 
-  // CORS configuration driven by CORS_ORIGIN
+  // CORS configuration driven by CORS_ORIGIN (supports comma-separated origins for production & local dev)
+  const allowedOrigins = env.CORS_ORIGIN.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   app.use(
     cors({
-      origin: env.CORS_ORIGIN,
+      origin:
+        allowedOrigins.length === 1
+          ? allowedOrigins[0]
+          : (origin, callback) => {
+              if (!origin) return callback(null, true);
+              const normalized = origin.replace(/\/+$/, '');
+              const matched = allowedOrigins.some(
+                (o) => o === '*' || o.replace(/\/+$/, '') === normalized
+              );
+              if (matched) {
+                callback(null, true);
+              } else {
+                callback(new Error('Not allowed by CORS'));
+              }
+            },
       credentials: true,
     })
   );

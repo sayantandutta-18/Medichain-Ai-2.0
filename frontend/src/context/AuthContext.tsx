@@ -48,7 +48,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(tokens.accessToken);
       setApiAuthToken(tokens.accessToken);
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Login failed. Please verify credentials.';
+      let msg = 'Login failed. Please verify credentials.';
+      if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.response?.status === 404) {
+        msg = 'Cannot connect to backend API (404 Not Found). Please verify your backend server is running and VITE_API_URL is configured.';
+      } else if (err.code === 'ERR_NETWORK' || !err.response) {
+        msg = 'Cannot connect to backend server. Please verify the API server is running and CORS is configured.';
+      } else if (err.response?.status && err.response.status >= 500) {
+        msg = `Backend server error (HTTP ${err.response.status}). Please check server logs.`;
+      }
       setError(msg);
       throw new Error(msg);
     }
@@ -69,7 +78,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setToken(tokens.accessToken);
       setApiAuthToken(tokens.accessToken);
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Registration failed.';
+      let msg = 'Registration failed.';
+      if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.response?.status === 404) {
+        msg = 'Cannot connect to backend API (404 Not Found). Please verify your backend server is running and VITE_API_URL is configured.';
+      } else if (err.code === 'ERR_NETWORK' || !err.response) {
+        msg = 'Cannot connect to backend server. Please verify the API server is running and CORS is configured.';
+      } else if (err.response?.status && err.response.status >= 500) {
+        msg = `Backend server error (HTTP ${err.response.status}). Please check server logs.`;
+      }
       setError(msg);
       throw new Error(msg);
     }

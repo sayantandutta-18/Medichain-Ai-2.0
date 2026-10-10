@@ -19,6 +19,17 @@ export const Register: React.FC = () => {
     e.preventDefault();
     setErrorMessage(null);
 
+    const trimmedEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail) {
+      setErrorMessage('Email address is required');
+      return;
+    }
+    if (!emailRegex.test(trimmedEmail)) {
+      setErrorMessage('Please enter a valid email address with a domain (e.g. name@example.com)');
+      return;
+    }
+
     if (password.length < 12) {
       setErrorMessage('Password must be at least 12 characters long');
       return;
@@ -27,7 +38,7 @@ export const Register: React.FC = () => {
     setLoading(true);
     try {
       await register({
-        email,
+        email: trimmedEmail,
         password,
         role,
         firstName: firstName.trim() || undefined,
