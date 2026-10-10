@@ -56,6 +56,10 @@ export function centralErrorHandler(
     statusCode = 400;
     errorName = 'BadRequest';
     message = 'Invalid JSON payload';
+  } else if (err.message && err.message.includes('not allowed by CORS')) {
+    statusCode = 403;
+    errorName = 'CorsForbidden';
+    message = 'Request origin not allowed by CORS policy';
   }
 
   // Never return stack traces to clients (Master Rule 10)

@@ -49,10 +49,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setApiAuthToken(tokens.accessToken);
     } catch (err: any) {
       let msg = 'Login failed. Please verify credentials.';
-      if (err.response?.data?.message) {
+      if (err.response?.status === 404) {
+        msg = 'Backend API endpoint not found (404 Not Found). Please verify your backend server is running and VITE_API_URL includes /api/v1.';
+      } else if (err.response?.status === 403 && (err.response?.data?.message?.includes('CORS') || err.message?.includes('CORS'))) {
+        msg = 'CORS origin denied (403 Forbidden). Please check backend CORS_ORIGIN configuration.';
+      } else if (err.response?.data?.message) {
         msg = err.response.data.message;
-      } else if (err.response?.status === 404) {
-        msg = 'Cannot connect to backend API (404 Not Found). Please verify your backend server is running and VITE_API_URL is configured.';
       } else if (err.code === 'ERR_NETWORK' || !err.response) {
         msg = 'Cannot connect to backend server. Please verify the API server is running and CORS is configured.';
       } else if (err.response?.status && err.response.status >= 500) {
@@ -79,10 +81,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setApiAuthToken(tokens.accessToken);
     } catch (err: any) {
       let msg = 'Registration failed.';
-      if (err.response?.data?.message) {
+      if (err.response?.status === 404) {
+        msg = 'Backend API endpoint not found (404 Not Found). Please verify your backend server is running and VITE_API_URL includes /api/v1.';
+      } else if (err.response?.status === 403 && (err.response?.data?.message?.includes('CORS') || err.message?.includes('CORS'))) {
+        msg = 'CORS origin denied (403 Forbidden). Please check backend CORS_ORIGIN configuration.';
+      } else if (err.response?.data?.message) {
         msg = err.response.data.message;
-      } else if (err.response?.status === 404) {
-        msg = 'Cannot connect to backend API (404 Not Found). Please verify your backend server is running and VITE_API_URL is configured.';
       } else if (err.code === 'ERR_NETWORK' || !err.response) {
         msg = 'Cannot connect to backend server. Please verify the API server is running and CORS is configured.';
       } else if (err.response?.status && err.response.status >= 500) {

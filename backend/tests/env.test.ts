@@ -34,4 +34,19 @@ describe('Environment Variable Validation', () => {
       /NODE_ENV/
     );
   });
+
+  it('supports comma-separated origins and defaults to localhost and Vercel production', () => {
+    const multiOriginEnv = {
+      PORT: '4000',
+      CORS_ORIGIN: 'http://localhost:5173,https://medichain-ai-2-0-7sbp.vercel.app',
+      NODE_ENV: 'test',
+    };
+    const parsed = parseEnv(multiOriginEnv);
+    expect(parsed.CORS_ORIGIN).toContain('http://localhost:5173');
+    expect(parsed.CORS_ORIGIN).toContain('https://medichain-ai-2-0-7sbp.vercel.app');
+
+    const defaultParsed = parseEnv({ PORT: '4000', NODE_ENV: 'test' });
+    expect(defaultParsed.CORS_ORIGIN).toContain('http://localhost:5173');
+    expect(defaultParsed.CORS_ORIGIN).toContain('https://medichain-ai-2-0-7sbp.vercel.app');
+  });
 });

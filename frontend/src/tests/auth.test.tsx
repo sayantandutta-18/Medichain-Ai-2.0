@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { apiClient, setApiAuthToken, setUnauthorizedHandler } from '../api/client.js';
+import { apiClient, setApiAuthToken, setUnauthorizedHandler, resolveApiBaseUrl } from '../api/client.js';
 import { AuthProvider, useAuth } from '../context/AuthContext.js';
 import { ProtectedRoute } from '../routes/ProtectedRoute.js';
 import { RoleRoute } from '../routes/RoleRoute.js';
@@ -26,6 +26,41 @@ describe('Checkpoint 10 - Frontend Foundation & Auth', () => {
       const config = { headers: {} as Record<string, string> };
       const modifiedConfig = interceptor(config);
       expect(modifiedConfig.headers.Authorization).toBe('Bearer mock-access-token');
+    });
+
+    it('resolves API base URLs correctly ensuring /api/v1 is always present and never duplicated', () => {
+      expect(resolveApiBaseUrl(undefined)).toBe('/api/v1');
+      expect(resolveApiBaseUrl('')).toBe('/api/v1');
+      expect(resolveApiBaseUrl('   ')).toBe('/api/v1');
+      expect(resolveApiBaseUrl('/api/v1')).toBe('/api/v1');
+      expect(resolveApiBaseUrl('/api/v1/')).toBe('/api/v1');
+      expect(resolveApiBaseUrl('https://medichain-ai-2-0-2.onrender.com')).toBe(
+        'https://medichain-ai-2-0-2.onrender.com/api/v1'
+      );
+      expect(resolveApiBaseUrl('https://medichain-ai-2-0-2.onrender.com/')).toBe(
+        'https://medichain-ai-2-0-2.onrender.com/api/v1'
+      );
+      expect(resolveApiBaseUrl('https://medichain-ai-2-0-2.onrender.com/api/v1')).toBe(
+        'https://medichain-ai-2-0-2.onrender.com/api/v1'
+      );
+      expect(resolveApiBaseUrl('https://medichain-ai-2-0-2.onrender.com/api/v1/')).toBe(
+        'https://medichain-ai-2-0-2.onrender.com/api/v1'
+      );
+      expect(resolveApiBaseUrl('https://medichain-ai-2-0-2.onrender.com/api')).toBe(
+        'https://medichain-ai-2-0-2.onrender.com/api/v1'
+      );
+    });
+
+    it('deduplicates leading /api/v1 prefix in request interceptor', () => {
+      const interceptor = (apiClient.interceptors.request as any).handlers[0].fulfilled;
+      const config1 = { url: '/api/v1/records', headers: {} };
+      expect(interceptor(config1).url).toBe('/records');
+
+      const config2 = { url: '/api/v1', headers: {} };
+      expect(interceptor(config2).url).toBe('/');
+
+      const config3 = { url: '/records', headers: {} };
+      expect(interceptor(config3).url).toBe('/records');
     });
 
     it('clears session on 401 response via the unauthorized handler', async () => {
@@ -197,6 +232,85 @@ describe('Checkpoint 10 - Frontend Foundation & Auth', () => {
         expect(screen.getByText('Home / Default Page')).toBeInTheDocument();
       });
       expect(screen.queryByText('Doctor Only Area')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('AuthContext Error Handling', () => {
+    it('distinguishes 404 endpoint errors with helpful configuration message', async () => {
+      vi.spyOn(apiClient, 'get').mockResolvedValueOnce({ data: { user: null } });
+      vi.spyOn(apiClient, 'post').mockRejectedValueOnce({
+        response: { status: 404, data: { message: 'Cannot POST /auth/login' } },
+      });
+
+      let capturedError: string | null = null;
+      const TestComponent = () => {
+        const { login } = useAuth();
+        return (
+          <button
+            onClick={async () => {
+              try {
+                await login('test@example.com', 'password123456');
+              } catch (e: any) {
+                capturedError = e.message;
+              }
+            }}
+          >
+            Login
+          </button>
+        );
+      };
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      const btn = screen.getByText('Login');
+      btn.click();
+
+      await waitFor(() => {
+        expect(capturedError).toContain('404 Not Found');
+        expect(capturedError).toContain('/api/v1');
+      });
+    });
+
+    it('distinguishes CORS and network errors', async () => {
+      vi.spyOn(apiClient, 'get').mockResolvedValueOnce({ data: { user: null } });
+      vi.spyOn(apiClient, 'post').mockRejectedValueOnce({
+        code: 'ERR_NETWORK',
+      });
+
+      let capturedError: string | null = null;
+      const TestComponent = () => {
+        const { register } = useAuth();
+        return (
+          <button
+            onClick={async () => {
+              try {
+                await register({ email: 'test@example.com', password: 'password123456', role: 'PATIENT' });
+              } catch (e: any) {
+                capturedError = e.message;
+              }
+            }}
+          >
+            Register
+          </button>
+        );
+      };
+
+      render(
+        <AuthProvider>
+          <TestComponent />
+        </AuthProvider>
+      );
+
+      const btn = screen.getByText('Register');
+      btn.click();
+
+      await waitFor(() => {
+        expect(capturedError).toContain('CORS');
+      });
     });
   });
 });

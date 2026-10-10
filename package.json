@@ -15,11 +15,11 @@
     "test:frontend": "node ./node_modules/vitest/vitest.mjs run --config frontend/vite.config.ts",
     "test:all": "npm run test && npm run test:frontend",
     "build": "node ./node_modules/typescript/bin/tsc --project backend/tsconfig.json",
-    "build:frontend": "npm --prefix frontend run build",
+    "build:frontend": "node ./node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit && node ./node_modules/vite/bin/vite.js build frontend",
     "seed": "node ./node_modules/tsx/dist/cli.mjs backend/scripts/seed.ts",
     "verify:audit": "node ./node_modules/tsx/dist/cli.mjs backend/scripts/verify-audit.ts",
     "dev:backend": "node ./node_modules/tsx/dist/cli.mjs watch backend/src/server.ts",
-    "dev:frontend": "npm --prefix frontend run dev"
+    "dev:frontend": "node ./node_modules/vite/bin/vite.js frontend"
   },
   "devDependencies": {}
 }

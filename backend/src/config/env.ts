@@ -17,7 +17,7 @@ export const envSchema = z.object({
       { message: 'PORT must be an integer between 1 and 65535' }
     )
     .transform((val) => Number(val)),
-  CORS_ORIGIN: z.string({ required_error: 'CORS_ORIGIN is required' }).min(1, 'CORS_ORIGIN is required').default('http://localhost:5173'),
+  CORS_ORIGIN: z.string({ required_error: 'CORS_ORIGIN is required' }).min(1, 'CORS_ORIGIN is required').default('http://localhost:5173,https://medichain-ai-2-0-7sbp.vercel.app'),
   MONGODB_URI: z.string().optional(),
   JWT_SECRET: z.string().optional(),
   JWT_EXPIRES_IN: z.string().default('15m'),

@@ -30,35 +30,54 @@ import { webhookRouter } from './routes/webhook.js';
 import { exportRouter } from './routes/export.js';
 import { sessionRouter } from './routes/session.js';
 
+export function isOriginAllowed(origin: string | undefined, allowedOrigins: string[]): boolean {
+  if (!origin) return true;
+  const normalized = origin.trim().replace(/\/+$/, '');
+  return allowedOrigins.some((pattern) => {
+    const cleanPattern = pattern.trim().replace(/\/+$/, '');
+    if (!cleanPattern) return false;
+    if (cleanPattern === '*' || cleanPattern === normalized) {
+      return true;
+    }
+    if (cleanPattern.includes('*')) {
+      const regexStr = '^' + cleanPattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$';
+      const regex = new RegExp(regexStr, 'i');
+      return regex.test(normalized);
+    }
+    return false;
+  });
+}
+
 export function createApp(): Express {
   const app = express();
 
   // Security headers via Helmet
   app.use(helmet());
 
-  // CORS configuration driven by CORS_ORIGIN (supports comma-separated origins for production & local dev)
-  const allowedOrigins = env.CORS_ORIGIN.split(',')
+  // CORS configuration driven by CORS_ORIGIN (supports comma-separated origins, wildcards, production Vercel & local dev)
+  const rawOrigins = env.CORS_ORIGIN.split(',')
     .map((o) => o.trim())
     .filter(Boolean);
 
+  const defaultProjectOrigins = [
+    'https://medichain-ai-2-0-7sbp.vercel.app',
+    'https://medichain-ai-2-0*.vercel.app',
+  ];
+  const allowedOrigins = Array.from(new Set([...rawOrigins, ...defaultProjectOrigins]));
+
   app.use(
     cors({
-      origin:
-        allowedOrigins.length === 1
-          ? allowedOrigins[0]
-          : (origin, callback) => {
-              if (!origin) return callback(null, true);
-              const normalized = origin.replace(/\/+$/, '');
-              const matched = allowedOrigins.some(
-                (o) => o === '*' || o.replace(/\/+$/, '') === normalized
-              );
-              if (matched) {
-                callback(null, true);
-              } else {
-                callback(new Error('Not allowed by CORS'));
-              }
-            },
+      origin: (origin, callback) => {
+        if (isOriginAllowed(origin, allowedOrigins)) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Origin ${origin || 'unknown'} not allowed by CORS`));
+        }
+      },
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+      exposedHeaders: ['X-Request-Id'],
     })
   );
 
@@ -73,6 +92,46 @@ export function createApp(): Express {
   // JSON body parser with configurable payload limit
   app.use(express.json({ limit: `${env.MAX_UPLOAD_MB}mb` }));
   app.use(express.urlencoded({ extended: true, limit: `${env.MAX_UPLOAD_MB}mb` }));
+
+  // Transparent fallback: if a request is made to a known API path without /api/v1 prefix, prefix it
+  const knownPrefixes = [
+    '/health',
+    '/auth',
+    '/access',
+    '/access-requests',
+    '/records',
+    '/audit',
+    '/ai',
+    '/notifications',
+    '/emergency',
+    '/shares',
+    '/analytics',
+    '/admin',
+    '/blockchain',
+    '/offline',
+    '/clinical-notes',
+    '/activity',
+    '/fhir',
+    '/proxy',
+    '/proofs',
+    '/prescriptions',
+    '/goals',
+    '/appointments',
+    '/webhooks',
+    '/export',
+  ];
+
+  app.use((req, _res, next) => {
+    if (!req.url.startsWith('/api/v1')) {
+      const matches = knownPrefixes.some(
+        (prefix) => req.path === prefix || req.path.startsWith(prefix + '/')
+      );
+      if (matches) {
+        req.url = `/api/v1${req.url}`;
+      }
+    }
+    next();
+  });
 
   // Routes
   app.use('/api/v1', healthRouter);
