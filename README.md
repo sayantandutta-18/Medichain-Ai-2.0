@@ -1,520 +1,175 @@
-🏥 MediChain AI 2.0
+# 🏥 MediChain AI 2.0
 
-🔐 Your Health Records. Your Permission. Verifiable Integrity.
+### 🔐 Your Health Records. Your Permission. Verifiable Integrity.
 
-🔗 Quick Links
+**MediChain AI 2.0** is a privacy-focused healthcare platform that combines Artificial Intelligence, Blockchain, and Cryptography to help patients manage medical records securely, control data access, and verify document integrity.
 
+---
 
+## 🚀 Live Demo
 
+| Service | Link |
+|---|---|
+| 🌐 **Frontend — Vercel** | [Open MediChain AI 2.0](https://medichain-ai-2-0-7duf.vercel.app/) |
+| ⚙️ **Backend API — Render** | [Open Backend API](https://medichain-ai-2-0-2.onrender.com/api/v1) |
+| ❤️ **Backend Health Check** | [Check API Readiness](https://medichain-ai-2-0-2.onrender.com/api/v1/health/ready) |
+| 💻 **GitHub Repository** | [View Source Code](https://github.com/sayantandutta-18/Medichain-Ai-2.0) |
 
+> **Note:** The backend API base URL may return a 404 at the root because it is an API service. Use the health-check endpoint to check backend readiness.
 
+---
 
+## 📌 Table of Contents
 
-Resource
+- [Overview](#-overview)
+- [Problem Statement](#-problem-statement)
+- [Our Solution](#-our-solution)
+- [Key Features](#-key-features)
+- [Technology Stack](#-technology-stack)
+- [System Architecture](#-system-architecture)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Deployment Guide](#-deployment-guide)
+- [Testing](#-testing)
+- [Security](#-security)
+- [Future Improvements](#-future-improvements)
+- [Disclaimer](#-disclaimer)
 
+---
 
+## 🎯 Overview
 
-Link
+Medical records are often scattered across hospitals, laboratories, and healthcare platforms. Patients may have limited visibility into how their information is accessed and shared.
 
+MediChain AI 2.0 explores a patient-centric approach to healthcare data management by combining:
 
+- 🔐 Secure authentication and access control
+- 🗂️ Medical record management
+- 🔒 Document encryption
+- 🧾 Cryptographic integrity verification
+- ⛓️ Sui blockchain integration
+- 🤖 AI-assisted medical information explanations
 
-Purpose
+### 💡 Our Mission
 
+**To give patients greater control over their medical records while improving privacy, transparency, and data integrity.**
 
+---
 
+## ❗ Problem Statement
 
+Traditional medical record management can present several challenges:
 
-🚀 Live Frontend
+- 🏥 Records are distributed across multiple healthcare providers.
+- 🔍 Patients may have limited visibility into access permissions.
+- 🔐 Sensitive medical information requires strong protection.
+- 🧾 Detecting unauthorised document modifications can be difficult.
+- 🩺 Medical terminology may be difficult for patients to understand.
 
+---
 
-
-Open MediChain AI 2.0
-
-
-
-Open the deployed web application
-
-
-
-
-
-⚙️ Backend API
-
-
-
-Open API base URL
-
-
-
-Production API base path
-
-
-
-
-
-❤️ Backend Health
-
-
-
-Check readiness
-
-
-
-Check whether configured backend subsystems are ready
-
-
-
-
-
-💻 GitHub Repository
-
-
-
-View source code
-
-
-
-Browse the project code
-
-
-
-ℹ️ The API base URL may not display a normal webpage when opened directly. Use the health endpoint to check service readiness.
-
-MediChain AI 2.0 is a privacy-focused healthcare platform designed to give patients greater control over their medical records through consent-based access, document encryption, cryptographic integrity verification, Sui blockchain integration, and AI-assisted medical information explanations.
-
-
-
-🧩 Project Type: Full-Stack Healthcare Technology MVP
-🎯 Focus: Healthcare · AI · Cybersecurity · Blockchain · Web Development
-
-
-
-🌐 Live Deployment
-
-
-
-
-
-
-
-Component
-
-
-
-URL
-
-
-
-Hosting
-
-
-
-
-
-🖥️ Frontend
-
-
-
-Open MediChain AI 2.0
-
-
-
-Vercel
-
-
-
-
-
-⚙️ Backend API
-
-
-
-Open API base URL
-
-
-
-Render
-
-
-
-
-
-❤️ Backend readiness check
-
-
-
-Check API readiness
-
-
-
-Render
-
-
-
-ℹ️ The API base URL may return a not-found response when opened directly if no root API route is defined. Use the health/readiness endpoint to check service status. Blockchain features may be simulated depending on the current environment configuration.
-
-
-
-
-
-📌 1. Overview
-
-Medical records are often scattered across different hospitals, laboratories, and healthcare platforms. Patients may struggle to manage their health information and understand who has access to it.
-
-MediChain AI 2.0 explores a patient-centric approach to medical data management by combining secure backend authorization, cryptographic verification, blockchain-based integrity proofs, and AI-assisted explanations.
-
-The platform is designed around one central principle:
-
-Patients should have greater visibility and control over who can access their medical records.
-
-❗ 2. Problem Statement
-
-Traditional medical-record management can present several challenges:
-
-
-
-
-
-Medical records are distributed across multiple healthcare providers.
-
-
-
-Patients may have limited visibility into data-access permissions.
-
-
-
-Unauthorized access to sensitive information is a security risk.
-
-
-
-Detecting whether a document has been modified can be difficult.
-
-
-
-Medical reports may contain terminology that is difficult for patients to understand.
-
-
-
-💡 3. Our Solution
+## 💎 Our Solution
 
 MediChain AI 2.0 aims to address these challenges through:
 
-
-
-
-
-Patient-Controlled Access: Consent-based permissions for sharing records with doctors.
-
-
-
-Encrypted Medical Records: Protect supported documents using AES-256-GCM encryption.
-
-
-
-Cryptographic Integrity: Use SHA-256 hashes to verify document integrity.
-
-
-
-Blockchain Anchoring: Use Sui blockchain integration to anchor integrity proofs without storing medical documents on-chain.
-
-
-
-Auditability: Maintain records of sensitive actions where implemented.
-
-
-
-AI-Assisted Explanations: Help users understand supported medical information in simpler language.
-
-
-
-Role-Based Workspaces: Provide separate workflows for patients, doctors, and administrators.
-
-
-
-✨ 4. Key Features
-
-
-
-🗂️ Medical Record Management
-
-
-
-
-
-Upload and organise medical records.
-
-
-
-Associate records with the appropriate patient.
-
-
-
-Calculate cryptographic hashes for integrity verification.
-
-
-
-Support secure document handling according to backend configuration.
-
-
-
-🤝 Patient Consent Management
-
-
-
-
-
-Request access to patient records.
-
-
-
-Grant permissions with defined scopes and expiry.
-
-
-
-Revoke access when it is no longer needed.
-
-
-
-Enforce access permissions on the backend.
-
-
-
-⛓️ Blockchain Integrity Verification
-
-
-
-
-
-Integrate with Sui and Move smart contracts.
-
-
-
-Anchor document-integrity proofs.
-
-
-
-Keep medical documents and clinical text off-chain.
-
-
-
-Distinguish real blockchain transactions from simulated or unavailable states.
-
-
-
-🤖 AI Medical Information Assistant
-
-
-
-
-
-Explain supported medical text in simpler language.
-
-
-
-Provide patient-friendly summaries where implemented.
-
-
-
-Keep AI provider credentials on the backend.
-
-
-
-Treat generated explanations as informational rather than diagnostic.
-
-
-
-🛡️ Security and Auditability
-
-
-
-
-
-Authentication and server-side authorization.
-
-
-
-Input validation and secure error handling.
-
-
-
-Audit logging for supported sensitive operations.
-
-
-
-Protection against unauthorized and cross-patient access.
-
-
-
-👥 Role-Based Dashboards
-
-
-
-
-
-Patient workspace for personal records and consent.
-
-
-
-Doctor workspace for authorised record access.
-
-
-
-Administrative workspace for supported governance functions.
-
-Feature availability depends on the current implementation and environment configuration.
-
-🛠️ 5. Technology Stack
-
-
-
-
-
-
-
-Layer
-
-
-
-Technologies
-
-
-
-
-
-Frontend
-
-
-
-React, TypeScript, Vite
-
-
-
-
-
-Styling and Animation
-
-
-
-Tailwind CSS, Framer Motion, where configured
-
-
-
-
-
-3D Interface
-
-
-
-Three.js / React Three Fiber, where configured
-
-
-
-
-
-Backend
-
-
-
-Node.js, Express.js, TypeScript
-
-
-
-
-
-Database
-
-
-
-MongoDB, Mongoose
-
-
-
-
-
-Validation
-
-
-
-Zod, where configured
-
-
-
-
-
-Authentication
-
-
-
-JWT and password hashing, where configured
-
-
-
-
-
-Encryption
-
-
-
-AES-256-GCM, where configured
-
-
-
-
-
-Integrity Verification
-
-
-
-SHA-256
-
-
-
-
-
-Blockchain
-
-
-
-Sui, Move smart contracts
-
-
-
-
-
-Testing
-
-
-
-Vitest and repository-defined test tools
-
-
-
-🏗️ 6. System Architecture
-
-┌──────────────────────────────┐
-│       React Frontend         │
-│ Patient · Doctor · Admin     │
-└──────────────┬───────────────┘
-               │
-               ▼
-┌──────────────────────────────┐
-│       Express API            │
-│ Authentication & Validation  │
-│ Consent & Access Policies    │
-│ Records · AI · Audit         │
-└────────┬────────────┬────────┘
-         │            │
-         ▼            ▼
-┌────────────────┐  ┌─────────────────┐
-│    MongoDB     │  │   Sui Blockchain │
-│ Application    │  │ Integrity proofs │
-│ Data & Records │  │ and transactions │
-└────────────────┘  └─────────────────┘
-
-Sensitive medical documents should remain off-chain. Only the intended cryptographic proof and necessary non-sensitive transaction data should be anchored.
-
-📂 7. Repository Structure
-
+- 👤 **Patient-Controlled Access:** Consent-based sharing of supported medical records.
+- 🔒 **Encrypted Records:** AES-256-GCM encryption where configured.
+- 🧾 **Integrity Verification:** SHA-256 hashes to help detect document changes.
+- ⛓️ **Blockchain Anchoring:** Sui integration for document-integrity proofs.
+- 🤖 **AI Assistance:** Simpler explanations of supported medical information.
+- 📋 **Auditability:** Logging of supported sensitive actions.
+- 🧑‍⚕️ **Role-Based Workspaces:** Separate workflows for patients, doctors, and administrators.
+
+*Feature availability depends on the current implementation and environment configuration.*
+
+---
+
+## ✨ Key Features
+
+### 🗂️ Medical Record Management
+- Upload and organise medical records.
+- Associate records with the appropriate patient.
+- Calculate document hashes for integrity verification.
+- Support secure document handling.
+
+### 👤 Patient Consent Management
+- Request access to patient records.
+- Grant permissions with defined scopes and expiry.
+- Revoke access when no longer needed.
+- Enforce access permissions on the backend.
+
+### ⛓️ Blockchain Integrity Verification
+- Sui blockchain and Move smart-contract integration.
+- Anchor document-integrity proofs.
+- Keep medical documents and clinical text off-chain.
+- Distinguish real transactions from simulated or unavailable states.
+
+### 🤖 AI Medical Information Assistant
+- Explain supported medical text in simpler language.
+- Generate patient-friendly summaries where implemented.
+- Keep AI provider credentials on the backend.
+- Provide informational assistance rather than diagnosis.
+
+### 🔐 Security and Auditability
+- Authentication and server-side authorisation.
+- Input validation and secure error handling.
+- Audit logging for supported sensitive operations.
+- Protection against unauthorised access.
+
+### 📊 Role-Based Dashboards
+- Patient workspace for personal records and consent.
+- Doctor workspace for authorised record access.
+- Administrative workspace for supported governance functions.
+
+---
+
+## 🛠️ Technology Stack
+
+| Layer | Technology |
+|---|---|
+| 🎨 Frontend | React, TypeScript, Vite |
+| 💅 Styling | Tailwind CSS, where configured |
+| 🎞️ Animation | Framer Motion, where configured |
+| ⚙️ Backend | Node.js, Express.js, TypeScript |
+| 🗄️ Database | MongoDB, Mongoose |
+| 🔑 Authentication | JWT and password hashing, where configured |
+| 🔒 Encryption | AES-256-GCM, where configured |
+| 🧾 Integrity | SHA-256 |
+| ⛓️ Blockchain | Sui, Move smart contracts |
+| 🤖 AI | OpenAI API integration, where configured |
+| ☁️ Deployment | Vercel and Render |
+
+---
+
+## 🏗️ System Architecture
+
+```text
+              👤 Patient / Doctor / Admin
+                         |
+                         v
+              🌐 React + TypeScript UI
+                         |
+                         v
+                 ⚙️ Express REST API
+                         |
+           +-------------+-------------+
+           |             |             |
+           v             v             v
+      🗄️ MongoDB    🔐 Security    🤖 AI Service
+                         |
+                         v
+                 ⛓️ Sui Integration
+              Document Integrity Proofs
+```
+
+**Security principle:** Medical documents and clinical text should remain off-chain. Only intended integrity proofs and necessary non-sensitive transaction data should be anchored.
+
+---
+
+## 📁 Project Structure
+
+```text
 MediChain-AI-2.0/
 ├── backend/
 │   ├── src/
@@ -539,514 +194,252 @@ MediChain-AI-2.0/
 │   └── Move.toml
 ├── scripts/
 ├── docs/
-├── docker-compose.yml
 ├── package.json
 └── README.md
+```
 
-The actual directory structure may vary slightly; follow the files in the current repository.
+*The actual directory structure may vary; follow the files present in the repository.*
 
-🚀 8. Getting Started
+---
 
+## 💻 Getting Started
 
+### 1️⃣ Prerequisites
 
-📋 Prerequisites
+Install the following:
 
-Install the following before running the project:
+- Git
+- Node.js and npm supported by the project
+- MongoDB, locally or through MongoDB Atlas
+- Optional Sui testnet configuration
+- Optional AI provider credentials
 
+Check your installations:
 
-
-
-
-Git
-
-
-
-Node.js and npm versions supported by the repository
-
-
-
-MongoDB, locally or through a hosted database
-
-
-
-Optional Sui testnet configuration
-
-
-
-Optional AI provider credentials
-
-Verify your installation:
-
+```bash
 node --version
 npm --version
 git --version
+```
 
+### 2️⃣ Clone the Repository
 
-
-1️⃣ Clone the Repository
-
+```bash
 git clone https://github.com/sayantandutta-18/Medichain-Ai-2.0.git
 cd Medichain-Ai-2.0
+```
 
+### 3️⃣ Install Dependencies
 
-
-2️⃣ Install Dependencies
-
+```bash
 npm install
+```
 
-Check the available scripts:
+Check available scripts:
 
+```bash
 npm run
+```
 
-If the backend and frontend use separate package scripts, follow the instructions in their respective package.json files.
+If frontend and backend use separate package scripts, follow the instructions in their respective `package.json` files.
 
-3️⃣ Configure Environment Variables
+### 4️⃣ Run Locally
 
-Locate the project's example environment files and copy the relevant example to the expected local .env location.
+Use the development commands defined by your project. If these scripts exist, open two terminals.
 
-For example, in PowerShell, only if this file exists:
+**Backend:**
 
-Copy-Item backend/.env.example backend/.env
-
-Configure the variables required by the actual backend configuration. They may include:
-
-
-
-
-
-
-
-Variable
-
-
-
-Purpose
-
-
-
-
-
-NODE_ENV
-
-
-
-Application environment
-
-
-
-
-
-PORT
-
-
-
-Backend server port
-
-
-
-
-
-MONGODB_URI
-
-
-
-MongoDB connection
-
-
-
-
-
-JWT_SECRET
-
-
-
-Authentication token signing secret
-
-
-
-
-
-ENCRYPTION_KEY
-
-
-
-Document-encryption key
-
-
-
-
-
-CORS_ORIGIN
-
-
-
-Allowed frontend origin
-
-
-
-
-
-SUI_NETWORK
-
-
-
-Sui network selection
-
-
-
-
-
-AI provider key
-
-
-
-Server-side AI integration
-
-Use the exact variable names required by the repository.
-
-Never commit .env files, passwords, API keys, wallet private keys, or seed phrases. Use secure environment settings for deployments.
-
-4️⃣ Start the Backend
-
-If the backend defines a dev script:
-
+```bash
 npm --prefix backend run dev
+```
 
+**Frontend:**
 
-
-5️⃣ Start the Frontend
-
-Open another terminal at the repository root:
-
+```bash
 npm --prefix frontend run dev
+```
 
-Open the frontend URL printed in the terminal. Confirm that the API base URL and backend port match your local configuration.
+Open the frontend URL printed in the terminal.
 
+---
 
+## 🔑 Environment Variables
 
-If either command is not defined in the repository, inspect that package's scripts and use the available development command.
+### 🌐 Frontend — Vercel
 
+In Vercel, open:
 
+**Project → Settings → Environment Variables**
 
-🔐 9. Security Design
+Configure:
 
-Security is a central design goal of MediChain AI 2.0.
+| Key | Value |
+|---|---|
+| `VITE_API_URL` | `https://medichain-ai-2-0-2.onrender.com/api/v1` |
 
+Apply it to the required environments, including **Production**. If you change an environment variable, redeploy the frontend because Vite variables are applied during the build.
 
+### ⚙️ Backend — Render
 
+In Render, open:
 
+**Backend Service → Environment**
 
-Server-Side Authorization: Protected operations must be authorised by the backend.
+Configure the variables required by the backend. Depending on the project, these may include:
 
+| Variable | Purpose |
+|---|---|
+| `NODE_ENV` | Runtime environment |
+| `PORT` | Server port, if required by the application |
+| `MONGODB_URI` | MongoDB connection string |
+| `JWT_SECRET` | Authentication token signing secret |
+| `ENCRYPTION_KEY` | Document-encryption key |
+| `CORS_ORIGIN` | Allowed frontend origin, if supported by the backend |
+| `SUI_NETWORK` | Blockchain network selection, if supported |
+| AI provider key | Server-side AI integration |
 
+**Important:** Use the exact variable names expected by the code. For CORS, allow the deployed Vercel origin:
 
-Patient Consent: Access should respect permission scope, expiry, and revocation.
+`https://medichain-ai-2-0-7duf.vercel.app`
 
+Do not replace existing allowed origins blindly; preserve any required local development origin.
 
+Never publish passwords, API keys, private keys, seed phrases, or `.env` files.
 
-Document Encryption: Use authenticated encryption where implemented and configured.
+---
 
+## ☁️ Deployment Guide
 
+### ⚙️ Backend Deployment — Render
 
-Integrity Verification: Compare SHA-256 hashes to detect document changes.
+1. Open [Render Dashboard](https://dashboard.render.com/).
+2. Select the MediChain backend service.
+3. Connect it to the GitHub repository if it is not already connected.
+4. Configure the build and start commands according to the backend `package.json` and Render service settings.
+5. Add the required environment variables under **Environment**.
+6. Ensure the MongoDB Atlas database user and network access are configured correctly.
+7. Trigger a deploy or push a new commit if Auto-Deploy is enabled.
+8. Check **Logs** and **Events** for errors.
+9. Verify backend readiness:
 
+   [Check Backend Health](https://medichain-ai-2-0-2.onrender.com/api/v1/health/ready)
 
+A successful readiness response should report `ready: true`.
 
-Data Minimisation: Do not publish medical documents or clinical text on-chain.
+### 🌐 Frontend Deployment — Vercel
 
+1. Open [Vercel Dashboard](https://vercel.com/dashboard).
+2. Select the MediChain frontend project.
+3. Open **Settings → Environment Variables**.
+4. Set `VITE_API_URL` to:
 
+   `https://medichain-ai-2-0-2.onrender.com/api/v1`
 
-Secret Management: Store credentials in environment variables or a deployment secret manager.
+5. Ensure the correct frontend project and deployment environment are selected.
+6. Open **Deployments**.
+7. Push a commit or redeploy the latest deployment after changing environment variables.
+8. Wait for the deployment to show **Ready**.
+9. Open the live website:
 
+   [🚀 MediChain AI 2.0](https://medichain-ai-2-0-7duf.vercel.app/)
 
+### 🔄 Updating the Project
 
-AI Guardrails: AI must not bypass application permissions or independently execute sensitive actions.
+After modifying the code:
 
-Before any real-data use, the security design requires thorough independent review and testing.
+```bash
+git status
+git add .
+git status
+git commit -m "describe your changes"
+git push origin main
+```
 
-🧪 10. Testing
+Check the deployment status on Render and Vercel. If Auto-Deploy is enabled, a push may trigger a new deployment automatically.
 
-Run the scripts available in the repository:
+Before `git add .`, confirm that no `.env` files or secrets are staged.
 
+---
+
+## 🧪 Testing
+
+Check available scripts:
+
+```bash
 npm run
+```
 
-Common checks, if defined, include:
+Run the tests and build commands supported by the repository, for example:
 
+```bash
 npm test
-npm run typecheck
 npm run build
-npm run smoke
+```
 
-Verify the actual output before claiming that tests pass. A successful frontend build alone does not establish that the backend, database, blockchain, and AI integrations all work correctly.
+Only use commands that exist in the project's `package.json` files.
 
-Recommended security tests include:
+### ✅ Production Smoke-Test Checklist
 
+- [ ] Backend health endpoint responds.
+- [ ] Database reports connected.
+- [ ] Frontend loads successfully.
+- [ ] Registration works.
+- [ ] Login works.
+- [ ] Authenticated `/auth/me` request uses the correct API path.
+- [ ] CORS allows the deployed Vercel origin.
+- [ ] Protected routes enforce authentication and permissions.
+- [ ] Blockchain status clearly indicates real, simulated, or unavailable operation.
 
+A successful build does not by itself prove that every production integration works.
 
+---
 
+## 🔐 Security
 
-Unauthenticated access to protected endpoints.
+- Use server-side authorisation for protected operations.
+- Enforce patient consent, scope, expiry, and revocation.
+- Use authenticated encryption where implemented and configured.
+- Keep secrets on the server and in secure deployment settings.
+- Never publish medical documents or clinical text on-chain.
+- Prevent unauthorised or cross-patient access.
+- Ensure AI cannot bypass application permissions.
+- Review and test security before using real patient information.
 
+---
 
+## 🔮 Future Improvements
 
-Access to another patient's records.
+- 🧪 More comprehensive integration and end-to-end testing
+- 📊 Improved medical timelines and record search
+- ♿ Better accessibility and responsive design
+- 🔐 Encryption-key rotation and recovery procedures
+- 📈 Security monitoring and audit verification
+- 🌍 Multilingual AI explanations with safety evaluations
+- 🚀 Improved deployment automation and observability
 
+---
 
+## ⚠️ Disclaimer
 
-Access after consent expiry.
+MediChain AI 2.0 is an **educational and portfolio MVP**. It is not a certified medical device, diagnostic system, or clinical decision-support tool. It is not represented as compliant with HIPAA, GDPR, India's DPDP Act, or any other healthcare regulation.
 
+Do not use this project for diagnosis, treatment decisions, emergency triage, or real patient data. AI-generated explanations may be inaccurate and must not replace advice from a qualified healthcare professional.
 
+---
 
-Access after consent revocation.
+## 👨‍💻 Author & Repository
 
+- **GitHub:** [sayantandutta-18](https://github.com/sayantandutta-18)
+- **Repository:** [MediChain AI 2.0](https://github.com/sayantandutta-18/Medichain-Ai-2.0)
+- **Live Frontend:** [Vercel](https://medichain-ai-2-0-7duf.vercel.app/)
+- **Backend API:** [Render](https://medichain-ai-2-0-2.onrender.com/api/v1)
 
+---
 
-Invalid upload and input handling.
+<div align="center">
 
+### 🏥 MediChain AI 2.0
 
+**Building a more private, transparent, and patient-centric healthcare experience.** 🔐⛓️🤖
 
-Document-integrity verification.
-
-
-
-Correct handling of unavailable or simulated blockchain services.
-
-
-
-⛓️ 11. Blockchain Integration
-
-Sui blockchain integration is intended to provide an integrity-verification layer.
-
-The design aims to:
-
-
-
-
-
-Calculate a cryptographic hash for a document.
-
-
-
-Store the document through the configured application storage flow.
-
-
-
-Anchor the intended integrity proof through the Sui integration.
-
-
-
-Verify the proof when requested.
-
-
-
-Report whether the result is verified, simulated, unavailable, or mismatched.
-
-Blockchain status must reflect the actual result. Simulated transactions must never be presented as real on-chain transactions.
-
-☁️ 12. Deployment
-
-
-
-🖥️ Frontend Deployment — Vercel
-
-
-
-
-
-Import the GitHub repository into Vercel or open the existing frontend project.
-
-
-
-Open Settings → Environment Variables.
-
-
-
-Add or update the following variable for Production (and Preview if needed):
-
-
-
-
-
-
-
-Key
-
-
-
-Value
-
-
-
-
-
-VITE_API_URL
-
-
-
-https://medichain-ai-2-0-2.onrender.com/api/v1
-
-
-
-Save the variable and redeploy the frontend. Vite environment variables are applied during the build, so a new deployment is required after changing them.
-
-
-
-Open the live frontend and test registration, login, and authenticated requests.
-
-
-
-⚙️ Backend Deployment — Render
-
-
-
-
-
-Open the Render Dashboard and select the backend service.
-
-
-
-Configure the environment variables required by the backend in Environment. Use the exact names expected by the code. Common examples include MONGODB_URI, JWT_SECRET, ENCRYPTION_KEY, and the CORS origin variable if configured by the project. Never put secret values in this README.
-
-
-
-Ensure the production CORS allowlist includes the deployed Vercel origin: https://medichain-ai-2-0-7duf.vercel.app. If a custom domain or a different Vercel deployment is used, allow that exact origin too.
-
-
-
-Push code changes to GitHub and verify that the latest Render deployment finishes successfully.
-
-
-
-Check the backend readiness endpoint. A ready: true response indicates that the configured readiness checks passed at the time of the request.
-
-
-
-🔒 Do not commit .env files, database credentials, JWT secrets, encryption keys, API keys, wallet private keys, or seed phrases.
-
-A deployment requires configuration and verification of:
-
-
-
-
-
-Backend hosting and runtime environment.
-
-
-
-MongoDB connection and database access restrictions.
-
-
-
-Frontend production API URL.
-
-
-
-Production CORS origins and HTTPS.
-
-
-
-Secure environment variables.
-
-
-
-Optional Sui and AI credentials.
-
-
-
-Backend health checks and application logs.
-
-
-
-Production builds and end-to-end smoke tests.
-
-Use the build and start commands supported by the repository and hosting provider. Do not deploy with development credentials or unverified security assumptions.
-
-🔮 13. Future Improvements
-
-Potential development priorities include:
-
-
-
-
-
-More comprehensive integration and end-to-end tests.
-
-
-
-Better record search and medical timeline experiences.
-
-
-
-Improved accessibility and responsive UI.
-
-
-
-Stronger encryption-key rotation and recovery procedures.
-
-
-
-Better security monitoring and audit verification.
-
-
-
-Multilingual AI explanations with safety evaluations.
-
-
-
-Improved deployment automation and observability.
-
-
-
-Verified demo screenshots and a reproducible demo environment.
-
-
-
-🎬 14. Demo Guidelines
-
-For a portfolio demonstration:
-
-
-
-
-
-Use synthetic patient and medical-record data.
-
-
-
-Show the patient dashboard and record-management workflow.
-
-
-
-Demonstrate a doctor access request and patient consent.
-
-
-
-Show that unauthorised or revoked access is denied.
-
-
-
-Explain document-integrity verification.
-
-
-
-Clearly label real, simulated, and unavailable blockchain states.
-
-
-
-Demonstrate AI explanations without using real patient information.
-
-Add screenshots or a demo video here once they are available and verified.
-
-⚠️ 15. Important Disclaimer
-
-MediChain AI 2.0 is an educational and portfolio MVP. It is not a certified medical device, diagnostic system, or clinical decision-support tool. It is not represented as compliant with HIPAA, GDPR, India's DPDP Act, or any other healthcare regulation.
-
-Do not use it for diagnosis, treatment decisions, emergency triage, or real patient data. AI-generated explanations may be inaccurate and must not replace guidance from a qualified healthcare professional.
-
-📄 16. License
-
-Add or verify the repository's LICENSE file before stating a specific license. If the project uses the MIT License, link to that file here.
-
-
-
-MediChain AI 2.0 — Exploring privacy-first healthcare software through AI, cryptographic integrity, and blockchain technology.
+</div>
