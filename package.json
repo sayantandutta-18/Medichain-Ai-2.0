@@ -8,6 +8,7 @@
     "frontend"
   ],
   "scripts": {
+    "start": "node backend/dist/server.js",
     "typecheck": "node ./node_modules/typescript/bin/tsc --project backend/tsconfig.json --noEmit",
     "typecheck:frontend": "node ./node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit",
     "test": "node ./node_modules/vitest/vitest.mjs run --config backend/vitest.config.ts",
@@ -15,8 +16,10 @@
     "test:all": "npm run test && npm run test:frontend",
     "build": "node ./node_modules/typescript/bin/tsc --project backend/tsconfig.json",
     "build:frontend": "node \"C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npm-cli.js\" --prefix frontend run build",
-    "seed": "node ./backend/node_modules/tsx/dist/cli.mjs backend/scripts/seed.ts",
-    "verify:audit": "node ./backend/node_modules/tsx/dist/cli.mjs backend/scripts/verify-audit.ts"
+    "seed": "node ./node_modules/tsx/dist/cli.mjs backend/scripts/seed.ts",
+    "verify:audit": "node ./node_modules/tsx/dist/cli.mjs backend/scripts/verify-audit.ts",
+    "dev:backend": "node ./node_modules/tsx/dist/cli.mjs watch backend/src/server.ts",
+    "dev:frontend": "npm --prefix frontend run dev"
   },
   "devDependencies": {}
 }
