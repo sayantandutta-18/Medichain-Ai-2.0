@@ -1,74 +1,58 @@
-module medichain_anchor::medical_record_anchor {
-    use sui::event;
+module medichain_anchor::medical_records {
     use sui::object::{Self, UID};
     use sui::tx_context::{Self, TxContext};
+    use sui::clock::{Self, Clock};
     use sui::transfer;
-    use std::string::String;
 
     /// Verifiable record anchor holding cryptographic metadata only (Master Rule 7 & 8).
+    /// Published on Sui Testnet at: 0x57c69fd3f040fa1a2746ff5ce45ff8644ef728d5737e76a725719f7492006526
     /// Document contents and private health records are strictly forbidden from being stored on-chain.
-    public struct RecordAnchor has key, store {
+    public struct MedicalRecordAnchor has key, store {
         id: UID,
-        record_id: String,
+        record_id: vector<u8>,
         record_hash: vector<u8>,
         patient: address,
         created_at: u64,
     }
 
-    /// Event emitted when an integrity anchor is written to the blockchain.
-    public struct RecordAnchoredEvent has copy, drop {
-        record_id: String,
+    /// Public entry function creating an immutable cryptographic anchor on Sui Testnet.
+    /// Uses global clock object 0x6 for decentralized timestamping.
+    public fun create_record_anchor(
+        record_id: vector<u8>,
         record_hash: vector<u8>,
         patient: address,
-        created_at: u64,
-        anchor_id: address,
-    }
-
-    /// Shared registry tracking anchor records on Sui testnet.
-    public struct AnchorRegistry has key {
-        id: UID,
-        total_anchors: u64,
-    }
-
-    /// Initialize the package and create the shared registry.
-    fun init(ctx: &mut TxContext) {
-        let registry = AnchorRegistry {
-            id: object::new(ctx),
-            total_anchors: 0,
-        };
-        transfer::share_object(registry);
-    }
-
-    /// Public entry function to anchor record cryptographic hash metadata.
-    public entry fun anchor_record(
-        registry: &mut AnchorRegistry,
-        record_id: String,
-        record_hash: vector<u8>,
-        patient: address,
-        created_at: u64,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
-        let anchor_uid = object::new(ctx);
-        let anchor_addr = object::uid_to_address(&anchor_uid);
-
-        let anchor = RecordAnchor {
-            id: anchor_uid,
+        let anchor = MedicalRecordAnchor {
+            id: object::new(ctx),
             record_id,
             record_hash,
             patient,
-            created_at,
+            created_at: clock::timestamp_ms(clock),
         };
 
-        registry.total_anchors = registry.total_anchors + 1;
-
-        event::emit(RecordAnchoredEvent {
-            record_id,
-            record_hash,
-            patient,
-            created_at,
-            anchor_id: anchor_addr,
-        });
-
+        // Transfer anchor object to transaction sender
         transfer::transfer(anchor, tx_context::sender(ctx));
+    }
+
+    /// Accessor for anchored record identifier bytes
+    public fun record_id(anchor: &MedicalRecordAnchor): vector<u8> {
+        anchor.record_id
+    }
+
+    /// Accessor for anchored cryptographic hash bytes (SHA-256)
+    public fun record_hash(anchor: &MedicalRecordAnchor): vector<u8> {
+        anchor.record_hash
+    }
+
+    /// Accessor for patient address
+    public fun patient(anchor: &MedicalRecordAnchor): address {
+        anchor.patient
+    }
+
+    /// Accessor for decentralized timestamp
+    public fun created_at(anchor: &MedicalRecordAnchor): u64 {
+        anchor.created_at
     }
 }

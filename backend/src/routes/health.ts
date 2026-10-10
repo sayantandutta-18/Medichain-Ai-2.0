@@ -46,9 +46,10 @@ healthRouter.get('/health/ready', async (_req: Request, res: Response) => {
       status: jwtConfigured ? 'UP' : 'DOWN',
     },
     blockchainAnchor: {
-      status: 'UP',
+      status: suiMode === 'disabled' ? 'DOWN' : 'UP',
       mode: suiMode,
       network: env.SUI_NETWORK,
+      packageId: env.SUI_PACKAGE_ID,
     },
     aiAssistant: {
       status: aiConfigured ? 'UP' : 'DISABLED',

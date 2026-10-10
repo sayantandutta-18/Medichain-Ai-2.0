@@ -180,6 +180,70 @@ describe('Sui Blockchain Anchoring & Verification (Checkpoint 8)', () => {
     });
   });
 
+  describe('Testnet Mode Configuration & Truthful Failures', () => {
+    it('returns honest FAILED status when testnet mode is requested but credentials are missing or placeholder', async () => {
+      const prevMode = process.env.SUI_MODE;
+      const prevMnemonic = process.env.SUI_ENV_MNEMONIC;
+      process.env.SUI_MODE = 'testnet';
+      process.env.SUI_ENV_MNEMONIC = ''; // Empty signing credentials
+
+      const res = await request(app)
+        .post(`/api/v1/records/${sampleRecordId}/anchor`)
+        .set('Authorization', `Bearer ${patientToken}`);
+
+      process.env.SUI_MODE = prevMode;
+      process.env.SUI_ENV_MNEMONIC = prevMnemonic;
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('FAILED');
+      expect(res.body.mode).toBe('testnet');
+      expect(res.body.message).toContain('missing active funded signing credentials');
+    });
+
+    it('detects simulated anchors under testnet mode and rejects with MISMATCH (never falsifying on-chain status)', async () => {
+      // Ensure record has simulated anchor data
+      await MedicalRecord.findByIdAndUpdate(sampleRecordId, {
+        blockchainAnchor: {
+          txDigest: 'SIMULATED_TX_test_123',
+          objectId: '0xsimulated_test_123',
+          onChainHash: computedSha256,
+          status: 'CONFIRMED',
+          mode: 'simulated',
+          anchoredAt: new Date(),
+        },
+        status: 'CONFIRMED',
+      });
+
+      const prevMode = process.env.SUI_MODE;
+      process.env.SUI_MODE = 'testnet';
+
+      const res = await request(app)
+        .get(`/api/v1/records/${sampleRecordId}/verify`)
+        .set('Authorization', `Bearer ${patientToken}`);
+
+      process.env.SUI_MODE = prevMode;
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('MISMATCH');
+      expect(res.body.mode).toBe('testnet');
+      expect(res.body.message).toContain('simulated anchor metadata');
+    });
+
+    it('queries Sui Testnet fullnode and reports truthful connectivity in checkHealth', async () => {
+      const prevMode = process.env.SUI_MODE;
+      process.env.SUI_MODE = 'testnet';
+
+      const health = await SuiClient.checkHealth();
+
+      process.env.SUI_MODE = prevMode;
+
+      expect(health.mode).toBe('testnet');
+      expect(health.network).toBe('testnet');
+      expect(health.packageId).toBe('0x57c69fd3f040fa1a2746ff5ce45ff8644ef728d5737e76a725719f7492006526');
+      expect(['UP', 'DEGRADED']).toContain(health.status);
+    });
+  });
+
   // Testnet integration test: skipped unless SUI_INTEGRATION=1
   describe.skipIf(!process.env.SUI_INTEGRATION)('Real Sui Testnet Integration', () => {
     it('successfully publishes anchor on Sui testnet', async () => {
